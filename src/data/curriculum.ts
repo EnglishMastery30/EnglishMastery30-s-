@@ -1,0 +1,186 @@
+export interface DaySession {
+  day: number;
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Professional';
+  topic: string;
+  description: string;
+  goals: string[];
+  example?: string;
+  youtubeLink?: string;
+  vocabulary?: { word: string; pronunciation: string; meaning: string; }[];
+}
+
+export const curriculum: DaySession[] = [
+  { 
+    day: 1, 
+    level: 'Beginner', 
+    topic: 'Introductions & Greetings', 
+    description: 'Learn to introduce yourself and greet others naturally.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Learn%20to%20introduce',
+    goals: ['Say hello and goodbye', 'Share your name and where you are from', 'Ask basic "How are you?" questions'],
+    vocabulary: [
+      { word: 'Introduce', pronunciation: '/ˌɪntrəˈdjuːs/', meaning: 'To tell someone another person\'s name' },
+      { word: 'Greeting', pronunciation: '/ˈɡriːtɪŋ/', meaning: 'A polite word or sign of welcome' },
+      { word: 'Pleasure', pronunciation: '/ˈplɛʒər/', meaning: 'A feeling of happy satisfaction and enjoyment' }
+    ]
+  },
+  { 
+    day: 2, 
+    level: 'Beginner', 
+    topic: 'Numbers, Time & Dates', 
+    description: 'Practice using numbers in everyday contexts.',
+    example: 'It is 3:15 PM right now.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Practice%20using%20numbers',
+    goals: ['Tell the time', 'Say your phone number', 'Discuss dates and birthdays'],
+    vocabulary: [
+      { word: 'Schedule', pronunciation: '/ˈʃɛdjuːl/ or /ˈskɛdʒuːl/', meaning: 'A plan for carrying out a process or procedure' },
+      { word: 'Quarter', pronunciation: '/ˈkwɔːrtər/', meaning: 'One of four equal parts (e.g., 15 minutes)' },
+      { word: 'Tomorrow', pronunciation: '/təˈmɒroʊ/', meaning: 'The day after today' }
+    ]
+  },
+  { 
+    day: 3, 
+    level: 'Beginner', 
+    topic: 'Daily Routine', 
+    description: 'Talk about what you do every day.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Talk%20about%20what',
+    goals: ['Use simple present tense', 'Describe morning to evening activities', 'Use frequency adverbs (always, sometimes, never)'],
+    vocabulary: [
+      { word: 'Routine', pronunciation: '/ruːˈtiːn/', meaning: 'A sequence of actions regularly followed' },
+      { word: 'Usually', pronunciation: '/ˈjuːʒʊəli/', meaning: 'Under normal conditions; generally' },
+      { word: 'Breakfast', pronunciation: '/ˈbrɛkfəst/', meaning: 'The first meal of the day' }
+    ]
+  },
+  { 
+    day: 4, 
+    level: 'Beginner', 
+    topic: 'Family & Friends', 
+    description: 'Describe the people close to you.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Describe%20the%20people',
+    goals: ['Name family members', 'Describe relationships', "Talk about a friend's personality"],
+    vocabulary: [
+      { word: 'Sibling', pronunciation: '/ˈsɪblɪŋ/', meaning: 'A brother or sister' },
+      { word: 'Relative', pronunciation: '/ˈrɛlətɪv/', meaning: 'A person connected by blood or marriage' },
+      { word: 'Personality', pronunciation: '/ˌpɜːrsəˈnæləti/', meaning: 'The combination of characteristics or qualities that form an individual\'s distinctive character' }
+    ]
+  },
+  { 
+    day: 5, 
+    level: 'Beginner', 
+    topic: 'Food & Dining', 
+    description: 'Order food and talk about your favorite meals.',
+    example: 'I would like to order a coffee, please.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Order%20food%20and',
+    goals: ['Read a menu', 'Order at a restaurant', 'Express likes and dislikes about food'],
+    vocabulary: [
+      { word: 'Restaurant', pronunciation: '/ˈrɛstrɒnt/', meaning: 'A place where people pay to sit and eat meals' },
+      { word: 'Delicious', pronunciation: '/dɪˈlɪʃəs/', meaning: 'Highly pleasant to the taste' },
+      { word: 'Beverage', pronunciation: '/ˈbɛvərɪdʒ/', meaning: 'A drink, especially one other than water' }
+    ]
+  },
+  { day: 6, level: 'Beginner', topic: 'Shopping & Prices', description: 'Navigate a store and ask about items.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Navigate%20a%20store',
+    goals: ['Ask for prices', 'Discuss clothing and sizes', 'Complete a simple transaction'], vocabulary: [{ word: 'Receipt', pronunciation: '/rɪˈsiːt/', meaning: 'A printed statement acknowledging that something has been paid for' }, { word: 'Bargain', pronunciation: '/ˈbɑːrɡɪn/', meaning: 'An agreement between two or more parties as to what each party will do for the other' }] },
+  { day: 7, level: 'Beginner', topic: 'Directions & Travel', description: 'Ask for and give simple directions.',
+    example: 'Excuse me, where is the nearest train station?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Ask%20for%20and',
+    goals: ['Understand left/right/straight', 'Ask "Where is the...?"', 'Describe how to get to a landmark'], vocabulary: [{ word: 'Intersection', pronunciation: '/ˌɪntərˈsɛkʃən/', meaning: 'A point or line common to lines or surfaces that intersect' }, { word: 'Destination', pronunciation: '/ˌdɛstɪˈneɪʃən/', meaning: 'The place to which someone or something is going or being sent' }] },
+  { day: 8, level: 'Beginner', topic: 'Hobbies & Interests', description: 'Share what you like to do in your free time.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Share%20what%20you',
+    goals: ['Talk about sports and games', 'Discuss weekend activities', 'Ask others about their hobbies'], vocabulary: [{ word: 'Leisure', pronunciation: '/ˈliːʒər/', meaning: 'Free time' }, { word: 'Fascinating', pronunciation: '/ˈfæsɪneɪtɪŋ/', meaning: 'Extremely interesting' }] },
+  { day: 9, level: 'Beginner', topic: 'Weather & Seasons', description: 'Make small talk about the weather.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Make%20small%20talk',
+    goals: ['Describe current weather', 'Talk about favorite seasons', 'Discuss weather forecasts'], vocabulary: [{ word: 'Temperature', pronunciation: '/ˈtɛmprətʃər/', meaning: 'The degree or intensity of heat present in a substance or object' }, { word: 'Forecast', pronunciation: '/ˈfɔːrkæst/', meaning: 'Predict or estimate a future event or trend' }] },
+  { day: 10, level: 'Beginner', topic: 'Describing People & Places', description: 'Use adjectives to describe the world around you.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Use%20adjectives%20to',
+    goals: ['Describe physical appearance', 'Describe a room or house', 'Talk about your hometown'], vocabulary: [{ word: 'Appearance', pronunciation: '/əˈpɪərəns/', meaning: 'The way that someone or something looks' }, { word: 'Gorgeous', pronunciation: '/ˈɡɔːrdʒəs/', meaning: 'Beautiful, very attractive' }] },
+  
+  { day: 11, level: 'Intermediate', topic: 'Making Plans & Appointments', description: 'Schedule meetings and social events.',
+    example: 'Let\'s move on to the next item on the agenda.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Schedule%20meetings%20and',
+    goals: ['Suggest a time and place', 'Accept or decline an invitation', 'Reschedule an appointment'], vocabulary: [{ word: 'Appointment', pronunciation: '/əˈpɔɪntmənt/', meaning: 'An arrangement to meet someone at a particular time and place' }, { word: 'Available', pronunciation: '/əˈveɪləbl/', meaning: 'Able to be used or obtained' }] },
+  { day: 12, level: 'Intermediate', topic: 'Opinions & Preferences', description: 'Express what you think and why.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Express%20what%20you',
+    goals: ['Say "I think..." or "In my opinion..."', 'Agree and disagree politely', 'Compare two different options'], vocabulary: [{ word: 'Opinion', pronunciation: '/əˈpɪnjən/', meaning: 'A view or judgment formed about something' }, { word: 'Preference', pronunciation: '/ˈprɛfərəns/', meaning: 'A greater liking for one alternative over another or others' }] },
+  { day: 13, level: 'Intermediate', topic: 'Health & Wellness', description: 'Talk about feeling sick or staying healthy.',
+    example: 'It\'s important to maintain a balanced diet.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Talk%20about%20feeling',
+    goals: ['Describe symptoms to a doctor', 'Give advice for a cold', 'Discuss exercise and diet'], vocabulary: [{ word: 'Symptom', pronunciation: '/ˈsɪmptəm/', meaning: 'A physical or mental feature which is regarded as indicating a condition of disease' }, { word: 'Medicine', pronunciation: '/ˈmɛdɪsn/', meaning: 'A compound or preparation used for the treatment or prevention of disease' }] },
+  { day: 14, level: 'Intermediate', topic: 'Work & Professions', description: 'Discuss jobs and career paths.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Discuss%20jobs%20and',
+    goals: ['Describe your job responsibilities', 'Talk about dream jobs', 'Discuss workplace environment'], vocabulary: [{ word: 'Colleague', pronunciation: '/ˈkɒliːɡ/', meaning: 'A person with whom one works in a profession or business' }, { word: 'Responsibility', pronunciation: '/rɪˌspɒnsɪˈbɪlɪti/', meaning: 'The state or fact of having a duty to deal with something' }] },
+  { day: 15, level: 'Intermediate', topic: 'Travel & Vacations', description: 'Share stories from past trips.',
+    example: 'Last weekend, I went to the park.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Share%20stories%20from',
+    goals: ['Use past tense to describe a trip', 'Talk about travel problems', 'Recommend a destination'], vocabulary: [{ word: 'Itinerary', pronunciation: '/aɪˈtɪnərəri/', meaning: 'A planned route or journey' }, { word: 'Accommodation', pronunciation: '/əˌkɒməˈdeɪʃən/', meaning: 'A room, group of rooms, or building in which someone may live or stay' }] },
+  { day: 16, level: 'Intermediate', topic: 'Technology & Social Media', description: 'Discuss the digital world.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Discuss%20the%20digital',
+    goals: ['Talk about smartphone usage', 'Discuss pros and cons of social media', 'Explain how to use an app'], vocabulary: [{ word: 'Algorithm', pronunciation: '/ˈælɡərɪðəm/', meaning: 'A process or set of rules to be followed in calculations or other problem-solving operations' }, { word: 'Privacy', pronunciation: '/ˈprɪvəsi/', meaning: 'The state or condition of being free from being observed or disturbed by other people' }] },
+  { day: 17, level: 'Intermediate', topic: 'Entertainment & Media', description: 'Review movies, books, and music.',
+    example: 'Listening to classical music helps me concentrate.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Review%20movies%2C%20books%2C',
+    goals: ['Summarize a movie plot', 'Recommend a book', 'Discuss music genres'], vocabulary: [{ word: 'Genre', pronunciation: '/ˈʒɒnrə/', meaning: 'A category of artistic composition' }, { word: 'Recommend', pronunciation: '/ˌrɛkəˈmɛnd/', meaning: 'Put forward (someone or something) with approval as being suitable for a particular purpose or role' }] },
+  { day: 18, level: 'Intermediate', topic: 'Cultural Differences', description: 'Talk about customs and traditions.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Talk%20about%20customs',
+    goals: ['Describe a local festival', 'Compare customs between countries', 'Discuss food etiquette'], vocabulary: [{ word: 'Etiquette', pronunciation: '/ˈɛtɪkɛt/', meaning: 'The customary code of polite behavior in society or among members of a particular profession or group' }, { word: 'Tradition', pronunciation: '/trəˈdɪʃən/', meaning: 'The transmission of customs or beliefs from generation to generation' }] },
+  { day: 19, level: 'Intermediate', topic: 'Handling Problems & Complaints', description: 'Resolve issues politely but firmly.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Resolve%20issues%20politely',
+    goals: ['Return an item to a store', 'Complain about a hotel room', 'Apologize for a mistake'], vocabulary: [{ word: 'Apologize', pronunciation: '/əˈpɒlədʒaɪz/', meaning: 'Express regret for something that one has done wrong' }, { word: 'Resolution', pronunciation: '/ˌrɛzəˈluːʃən/', meaning: 'A firm decision to do or not to do something' }] },
+  { day: 20, level: 'Intermediate', topic: 'Future Goals & Aspirations', description: 'Talk about what you want to achieve.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Talk%20about%20what',
+    goals: ['Use future tense (will/going to)', 'Discuss 5-year plans', 'Talk about learning goals'], vocabulary: [{ word: 'Aspiration', pronunciation: '/ˌæspɪˈreɪʃən/', meaning: 'A hope or ambition of achieving something' }, { word: 'Achieve', pronunciation: '/əˈtʃiːv/', meaning: 'Successfully bring about or reach (a desired objective or result) by effort, skill, or courage' }] },
+  
+  { day: 21, level: 'Advanced', topic: 'Job Interviews', description: 'Practice answering common interview questions.',
+    example: 'My greatest strength is my attention to detail.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Practice%20answering%20common',
+    goals: ['Answer "Tell me about yourself"', 'Discuss strengths and weaknesses', 'Explain why you want the job'], vocabulary: [{ word: 'Strengths', pronunciation: '/strɛŋθs/', meaning: 'A good or beneficial quality or attribute of a person or thing' }, { word: 'Weakness', pronunciation: '/ˈwiːknəs/', meaning: 'A quality or feature regarded as a disadvantage or fault' }] },
+  { day: 22, level: 'Advanced', topic: 'Professional Networking', description: 'Make connections in a business setting.',
+    example: 'Our company is expanding into new international markets.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Make%20connections%20in',
+    goals: ['Introduce yourself professionally', 'Exchange contact information', 'Make small talk at a conference'], vocabulary: [{ word: 'Conference', pronunciation: '/ˈkɒnfərəns/', meaning: 'A formal meeting for discussion' }, { word: 'Exchange', pronunciation: '/ɪksˈtʃeɪndʒ/', meaning: 'An act of giving one thing and receiving another (especially of the same type or value) in return' }] },
+  { day: 23, level: 'Advanced', topic: 'Giving Presentations', description: 'Structure and deliver a short talk.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Structure%20and%20deliver',
+    goals: ['Introduce a topic', 'Transition between points', 'Conclude and take questions'], vocabulary: [{ word: 'Transition', pronunciation: '/trænˈzɪʃən/', meaning: 'The process or a period of changing from one state or condition to another' }, { word: 'Conclude', pronunciation: '/kənˈkluːd/', meaning: 'Bring (something) to an end' }] },
+  { day: 24, level: 'Advanced', topic: 'Negotiating & Persuading', description: 'Reach an agreement or convince someone.',
+    example: 'I completely agree with your point.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Reach%20an%20agreement',
+    goals: ['Make a proposal', 'Compromise on a point', 'Use persuasive language'], vocabulary: [{ word: 'Compromise', pronunciation: '/ˈkɒmprəmaɪz/', meaning: 'An agreement or a settlement of a dispute that is reached by each side making concessions' }, { word: 'Persuade', pronunciation: '/pərˈsweɪd/', meaning: 'Cause (someone) to do something through reasoning or argument' }] },
+  { day: 25, level: 'Advanced', topic: 'Discussing Current Events', description: 'Talk about the news and global issues.',
+    example: 'Did you hear about the recent changes in the economy?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Talk%20about%20the',
+    goals: ['Summarize a news story', 'Discuss the impact of an event', 'Share a nuanced perspective'], vocabulary: [{ word: 'Nuanced', pronunciation: '/ˈnjuːɑːnst/', meaning: 'Characterized by subtle shades of meaning or expression' }, { word: 'Perspective', pronunciation: '/pərˈspɛktɪv/', meaning: 'A particular attitude toward or way of regarding something; a point of view' }] },
+  
+  { day: 26, level: 'Professional', topic: 'Leadership & Management', description: 'Discuss team dynamics and leadership.',
+    example: 'A good leader inspires and motivates their team.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Discuss%20team%20dynamics',
+    goals: ['Give constructive feedback', 'Motivate a team', 'Discuss leadership styles'], vocabulary: [{ word: 'Constructive', pronunciation: '/kənˈstrʌktɪv/', meaning: 'Serving a useful purpose; tending to build up' }, { word: 'Motivate', pronunciation: '/ˈmoʊtɪveɪt/', meaning: 'Provide (someone) with a motive for doing something' }] },
+  { day: 27, level: 'Professional', topic: 'Conflict Resolution', description: 'Handle difficult conversations at work.',
+    example: 'I\'ve been working in marketing for five years.',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Handle%20difficult%20conversations',
+    goals: ['De-escalate a tense situation', 'Mediate a dispute', 'Find a win-win solution'], vocabulary: [{ word: 'De-escalate', pronunciation: '/diːˈɛskəleɪt/', meaning: 'Reduce the intensity of (a conflict or potentially violent situation)' }, { word: 'Mediate', pronunciation: '/ˈmiːdieɪt/', meaning: 'Intervene between people in a dispute in order to bring about an agreement or reconciliation' }] },
+  { day: 28, level: 'Professional', topic: 'Advanced Vocabulary & Idioms', description: 'Incorporate native-like expressions.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Incorporate%20native-like%20expressions.',
+    goals: ['Use common business idioms', 'Understand phrasal verbs in context', 'Sound more natural and fluent'], vocabulary: [{ word: 'Incorporate', pronunciation: '/ɪnˈkɔːrpəreɪt/', meaning: 'Take in or contain (something) as part of a whole; include' }, { word: 'Fluent', pronunciation: '/ˈfluːənt/', meaning: '(of a person) able to express oneself easily and articulately' }] },
+  { day: 29, level: 'Professional', topic: 'Public Speaking Practice', description: 'Deliver a longer, persuasive speech.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Deliver%20a%20longer%2C',
+    goals: ['Use rhetorical devices', 'Control pacing and tone', 'Engage the audience'], vocabulary: [{ word: 'Rhetorical', pronunciation: '/rɪˈtɒrɪkəl/', meaning: 'Expressed in terms intended to persuade or impress' }, { word: 'Audience', pronunciation: '/ˈɔːdiəns/', meaning: 'The assembled spectators or listeners at a public event' }] },
+  { day: 30, level: 'Professional', topic: 'Final Assessment & Open Conversation', description: 'Test your skills across various topics.',
+    example: 'Hello, how are you today?',
+    youtubeLink: 'https://www.youtube.com/results?search_query=learn+english+Test%20your%20skills',
+    goals: ['Maintain a long conversation', 'Switch topics smoothly', 'Reflect on your progress'], vocabulary: [{ word: 'Assessment', pronunciation: '/əˈsɛsmənt/', meaning: 'The evaluation or estimation of the nature, quality, or ability of someone or something' }, { word: 'Reflect', pronunciation: '/rɪˈflɛkt/', meaning: 'Think deeply or carefully about' }] },
+];

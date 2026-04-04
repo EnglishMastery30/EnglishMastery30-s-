@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "english-swe-daily": {
+      "source": "wquguru/skills",
+      "sourceType": "github",
+      "computedHash": "c6adc5548518f949a8a983f675fa7dd9edb58b97f1bf4a895446e76aeff6a48f"
+    },
+    "language-learning": {
+      "source": "jackjin1997/clawforge",
+      "sourceType": "github",
+      "computedHash": "7c2798181991958e210513bdf4e69d909f6da088ce0c1902e3976c8be3003410"
+    },
+    "self-improve": {
+      "source": "tobihagemann/turbo",
+      "sourceType": "github",
+      "computedHash": "455c0cec3382abc1a28052fba2d4093684a61b9420c4fdb94040f9e9a21ce74a"
+    }
+  }
+}
