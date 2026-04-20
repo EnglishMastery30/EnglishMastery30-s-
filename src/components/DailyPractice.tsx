@@ -2,9 +2,10 @@ import { motion } from 'motion/react';
 import { Play, Activity, Target, Brain, ArrowRight, CheckCircle, Sparkles, Zap, BookOpen, MessageCircle, Briefcase, Mic, ArrowLeft, Volume2 } from 'lucide-react';
 import { curriculum, DaySession } from '../data/curriculum';
 
-export function DailyPractice({ onSelectDay, onBack }: { onSelectDay: (day: DaySession) => void, onBack: () => void }) {
-  const todaysLesson = curriculum[4]; // Day 5: Ordering Food
-  const nextLesson = curriculum[5];
+export function DailyPractice({ onSelectDay, onBack, completedSessions = [] }: { onSelectDay: (day: DaySession) => void, onBack: () => void, completedSessions?: number[] }) {
+  const nextLessonIndex = curriculum.findIndex(d => !completedSessions.includes(d.day));
+  const todaysLesson = nextLessonIndex !== -1 ? curriculum[nextLessonIndex] : curriculum[0];
+  const nextLesson = nextLessonIndex !== -1 && nextLessonIndex + 1 < curriculum.length ? curriculum[nextLessonIndex + 1] : curriculum[0];
 
   const playAudio = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -91,8 +92,22 @@ export function DailyPractice({ onSelectDay, onBack }: { onSelectDay: (day: DayS
                 key={section.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => onSelectDay(todaysLesson)} // For now, route to today's lesson
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectDay(todaysLesson); }}
+                onClick={() => {
+                  if (section.id === 'vocabulary') {
+                    window.dispatchEvent(new CustomEvent('navigate', { detail: 'vocabulary' }));
+                  } else {
+                    onSelectDay(todaysLesson);
+                  }
+                }}
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (section.id === 'vocabulary') {
+                      window.dispatchEvent(new CustomEvent('navigate', { detail: 'vocabulary' }));
+                    } else {
+                      onSelectDay(todaysLesson);
+                    }
+                  }
+                }}
                 className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-${section.color}-300 dark:hover:border-${section.color}-500/50 transition-colors text-left group flex flex-col h-full relative cursor-pointer`}
               >
                 <div className="flex justify-between items-start w-full mb-4">

@@ -5,9 +5,10 @@ import { sectionExamples } from '../data/sectionExamples';
 interface SectionDashboardProps {
   sectionName: string;
   onBack: () => void;
+  isLocked?: boolean;
 }
 
-export function SectionDashboard({ sectionName, onBack }: SectionDashboardProps) {
+export function SectionDashboard({ sectionName, onBack, isLocked = false }: SectionDashboardProps) {
   // Specific mock data for each section
   const sectionData: Record<string, any> = {
     'Beginner English': {

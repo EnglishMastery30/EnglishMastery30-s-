@@ -5,8 +5,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useLiveAPI } from '../hooks/useLiveAPI';
 import { DaySession } from '../data/curriculum';
 import { AudioVisualizer } from './AudioVisualizer';
+import { useCredits } from '../contexts/CreditsContext';
 
-export function SessionView({ session, onBack, onComplete, onNextSession }: { session: DaySession, onBack: () => void, onComplete: () => void, onNextSession: () => void; key?: string }) {
+export function SessionView({ session, nextSession, onBack, onComplete, onNextSession }: { session: DaySession, nextSession?: DaySession, onBack: () => void, onComplete: () => void, onNextSession: () => void; key?: string }) {
   const { language } = useLanguage();
   const [showSummary, setShowSummary] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<number[]>([]);
@@ -14,15 +15,62 @@ export function SessionView({ session, onBack, onComplete, onNextSession }: { se
   const [selectedText, setSelectedText] = useState('');
   const [translation, setTranslation] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [selectionPosition, setSelectionPosition] = useState<{ top: number, left: number } | null>(null);
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
 
-  const handleSelection = () => {
-    const selection = window.getSelection();
-    const text = selection?.toString().trim();
-    
-    if (text && text.length > 0) {
-      setSelectedText(text);
-      setTranslation('');
+  const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : undefined;
+
+  const systemInstruction = `You are an expert English tutor leading a lesson on: ${session.topic}.
+The user's native language is ${language}.
+Lesson Description: ${session.description}
+
+Your goals:
+1. Guide the user through the lesson material.
+2. Provide clear, encouraging feedback on their pronunciation and grammar.
+3. Keep the conversation flowing naturally.
+4. If they make a mistake, gently correct them and ask them to try again.
+5. Speak clearly and at a moderate pace.`;
+
+  const {
+    isConnected,
+    isConnecting,
+    error,
+    volume,
+    transcripts,
+    isProcessing,
+    connect,
+    disconnect
+  } = useLiveAPI(systemInstruction, apiKey);
+
+  const handleSelection = (e?: React.MouseEvent | React.TouchEvent) => {
+    // If clicking inside the translation popup, do nothing
+    if (e && (e.target as Element).closest('.translation-popup')) {
+      return;
     }
+
+    // Small delay to allow the browser to update the selection
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const text = selection?.toString().trim();
+      
+      if (text && text.length > 0 && selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        
+        // Only update if the text changed or position moved significantly
+        if (text !== selectedText) {
+          setSelectedText(text);
+          setTranslation('');
+          setSelectionPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX + (rect.width / 2)
+          });
+        }
+      } else {
+        setSelectedText('');
+        setSelectionPosition(null);
+      }
+    }, 10);
   };
 
   const translateSelectedText = async () => {
@@ -64,118 +112,11 @@ export function SessionView({ session, onBack, onComplete, onNextSession }: { se
     }
   };
   
-  const systemInstruction = `You are an expert English language AI Voice Coach. 
-Your student's preferred UI language code is '${language}'. You should briefly explain concepts and provide guidance in this language when necessary, but the actual speaking practice MUST be in English.
-
-You are conducting the Day ${session.day} practice session for a student at the ${session.level} level.
-The topic for today is: "${session.topic}".
-The goals for this session are:
-${session.goals.map(g => `- ${g}`).join('\n')}
-
-Your Voice Coach Responsibilities:
-1. EXPLAIN LESSONS: Start by warmly welcoming the student. Briefly explain today's topic and outline what they will learn.
-2. GUIDE SPEAKING PRACTICE: Lead the student step-by-step through the practice. Ask open-ended questions and prompt them to respond in English.
-3. CORRECT PRONUNCIATION & GRAMMAR: Listen carefully. If they make a mistake, gently correct their pronunciation or grammar, and ask them to repeat the correct phrase.
-4. MOTIVATE USERS: Be highly encouraging, patient, and supportive. Celebrate their effort and small wins to build their confidence.
-5. SESSION COMPLETION ALERT: Once all goals are met, explicitly announce that the session is complete, congratulate them on their progress, and tell them they can end the session now.
-
-Remember to keep your own speaking time concise so the student does most of the talking. Adapt your English speaking speed to the ${session.level} level.`;
-
-  const { isConnected, isConnecting, isProcessing, error, volume, transcripts, connect, disconnect } = useLiveAPI(systemInstruction);
-
   useEffect(() => {
     if (transcriptionRef.current) {
       transcriptionRef.current.scrollTop = transcriptionRef.current.scrollHeight;
     }
   }, [transcripts]);
-
-  if (showSummary) {
-    const accuracy = Math.floor(Math.random() * 10) + 88; // 88-97%
-    const vocabLearned = session.vocabulary ? session.vocabulary.slice(0, 3).map(v => v.word) : ['Excellent', 'Progress', 'Fluency'];
-    const grammarCorrections = [
-      "Used correct verb tense in past narratives",
-      "Improved subject-verb agreement",
-      "Natural use of prepositions"
-    ];
-
-    return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-3xl mx-auto"
-      >
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden p-8 md:p-12 text-center">
-          <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Award className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-            Fantastic Job!
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-xl mx-auto">
-            You've successfully completed Day {session.day}: {session.topic}. Your dedication to practicing English is really paying off!
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-left">
-            <div className="bg-indigo-50 dark:bg-indigo-500/10 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
-              <div className="flex items-center gap-3 mb-3 text-indigo-700 dark:text-indigo-400 font-semibold">
-                <Target className="w-5 h-5" />
-                Pronunciation
-              </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{accuracy}%</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">Accuracy Score</div>
-            </div>
-            
-            <div className="bg-emerald-50 dark:bg-emerald-500/10 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
-              <div className="flex items-center gap-3 mb-3 text-emerald-700 dark:text-emerald-400 font-semibold">
-                <CheckCircle className="w-5 h-5" />
-                Session Status
-              </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">Completed</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">All goals met</div>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 text-left mb-10">
-            <div className="flex items-center gap-3 mb-4 text-slate-800 dark:text-slate-200 font-semibold">
-              <TrendingUp className="w-5 h-5 text-blue-500" />
-              Grammar Improvements
-            </div>
-            <ul className="space-y-3">
-              {grammarCorrections.map((correction, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  <span className="text-slate-700 dark:text-slate-300">{correction}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={onBack}
-              className="px-8 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-lg transition-colors"
-            >
-              Back to Dashboard
-            </button>
-            <button 
-              onClick={() => setShowSummary(false)}
-              className="px-8 py-4 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="w-5 h-5" />
-              Practice Again
-            </button>
-            <button 
-              onClick={onNextSession}
-              className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none"
-            >
-              Continue to Next Session <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div 
@@ -183,7 +124,83 @@ Remember to keep your own speaking time concise so the student does most of the 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       className="max-w-4xl mx-auto"
+      onMouseUp={handleSelection}
+      onTouchEnd={handleSelection}
     >
+      <AnimatePresence>
+        {showSummary && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden p-8 md:p-12 text-center relative max-h-[90vh] overflow-y-auto"
+            >
+              <button 
+                onClick={onBack}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Award className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+                Class Finished!
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-xl mx-auto">
+                You've successfully completed Day {session.day}: {session.topic}. Your dedication to practicing English is really paying off!
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-left">
+                <div className="bg-indigo-50 dark:bg-indigo-500/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-2 text-indigo-700 dark:text-indigo-400 font-semibold">
+                    <Target className="w-5 h-5" />
+                    Accuracy
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{Math.floor(Math.random() * 10) + 88}%</div>
+                </div>
+                
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-400 font-semibold">
+                    <Languages className="w-5 h-5" />
+                    Words Learned
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{session.vocabulary ? session.vocabulary.length : 5}</div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-500/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400 font-semibold">
+                    <Star className="w-5 h-5" />
+                    Coins Earned
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">+{Math.floor(Math.random() * 20) + 30}</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button 
+                  onClick={onBack}
+                  className="px-8 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-lg transition-colors"
+                >
+                  Exit to Homepage
+                </button>
+                {nextSession && (
+                  <button 
+                    onClick={onNextSession}
+                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none"
+                  >
+                    Next Class <ArrowRight className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="flex items-center justify-between mb-8">
         <button 
           onClick={() => {
@@ -207,6 +224,41 @@ Remember to keep your own speaking time concise so the student does most of the 
           <ArrowRight className="w-5 h-5" />
         </button>
       </div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl flex items-start gap-3 text-left">
+              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">Connection Issue</h4>
+                <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
+                  {error.toLowerCase().includes('permission') || error.toLowerCase().includes('device') || error.toLowerCase().includes('microphone') || error.toLowerCase().includes('audio')
+                    ? "We couldn't access your microphone. Please check your browser permissions and try again."
+                    : error.toLowerCase().includes('api') || error.toLowerCase().includes('fetch') || error.toLowerCase().includes('network')
+                    ? "There was a network error connecting to the AI Voice Coach. Please check your internet connection."
+                    : "The connection to your AI Voice Coach was lost or failed to start. Please try again."}
+                </p>
+                <p className="text-xs text-rose-600/70 dark:text-rose-400/70 font-mono mb-3 break-words">
+                  Details: {error}
+                </p>
+                <button 
+                  onClick={connect}
+                  disabled={isConnecting}
+                  className="text-sm font-medium text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-500/20 hover:bg-rose-200 dark:hover:bg-rose-500/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isConnecting ? "Reconnecting..." : "Try Reconnecting"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors duration-300">
         <div className="p-6 sm:p-8 md:p-12 border-b border-slate-100 dark:border-slate-800/50">
@@ -318,6 +370,32 @@ Remember to keep your own speaking time concise so the student does most of the 
                   );
                 })}
               </ul>
+
+              <AnimatePresence>
+                {completedTasks.length === session.goals.length && session.goals.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                    exit={{ opacity: 0, y: -10, height: 0 }}
+                    className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/20 text-center overflow-hidden"
+                  >
+                    <h4 className="font-bold text-emerald-800 dark:text-emerald-300 mb-2 flex items-center justify-center gap-2">
+                      <CheckCircle className="w-5 h-5" /> All Goals Met!
+                    </h4>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">You've completed all the objectives for this session.</p>
+                    <button
+                      onClick={() => {
+                        disconnect();
+                        setShowSummary(true);
+                        onComplete();
+                      }}
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    >
+                      Finish & See Summary
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -329,9 +407,7 @@ Remember to keep your own speaking time concise so the student does most of the 
               <div className="w-full max-w-md mt-6 relative">
                 <div 
                   ref={transcriptionRef}
-                  onMouseUp={handleSelection}
-                  onTouchEnd={handleSelection}
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 min-h-[80px] max-h-[160px] overflow-y-auto flex flex-col shadow-inner scroll-smooth hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-text"
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 min-h-[120px] max-h-[240px] overflow-y-auto flex flex-col shadow-inner scroll-smooth hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-text"
                 >
                   <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
@@ -347,26 +423,39 @@ Remember to keep your own speaking time concise so the student does most of the 
                       </p>
                     ) : (
                       transcripts.map((t) => (
-                        <p 
-                          key={t.id} 
-                          className={`text-sm transition-colors duration-300 ${
-                            t.isFinal 
-                              ? 'text-slate-700 dark:text-slate-300' 
-                              : 'text-indigo-600 dark:text-indigo-400 font-medium'
-                          }`}
-                        >
-                          {t.text}
-                          {!t.isFinal && (
-                            <span className="inline-flex ml-1 gap-0.5">
-                              <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div key={t.id} className="flex items-start gap-2 group">
+                          <p 
+                            className={`text-sm transition-colors duration-300 flex-1 ${
+                              t.speaker === 'user'
+                                ? (t.isFinal ? 'text-indigo-700 dark:text-indigo-300' : 'text-indigo-500 dark:text-indigo-400 font-medium')
+                                : (t.isFinal ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400 font-medium')
+                            }`}
+                          >
+                            <span className="font-bold mr-2 opacity-70">
+                              {t.speaker === 'user' ? 'You:' : 'Tutor:'}
                             </span>
+                            {t.text}
+                            {!t.isFinal && (
+                              <span className="inline-flex ml-1 gap-0.5">
+                                <span className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <span className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <span className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              </span>
+                            )}
+                          </p>
+                          {t.isFinal && (
+                            <button 
+                              onClick={() => playAudio(t.text)}
+                              className="p-1 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition-all shrink-0"
+                              title="Listen"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
-                        </p>
+                        </div>
                       ))
                     )}
-                    {isProcessing && (
+                    {isProcessing && (!transcripts.length || transcripts[transcripts.length - 1].speaker !== 'ai' || transcripts[transcripts.length - 1].isFinal) && (
                       <motion.div 
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -378,74 +467,19 @@ Remember to keep your own speaking time concise so the student does most of the 
                     )}
                   </div>
                 </div>
-
-                <AnimatePresence>
-                  {selectedText && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full left-0 right-0 mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-lg shadow-md z-10 hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-600 transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Translation</span>
-                        <button onClick={() => setSelectedText('')} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300 italic mb-2">"{selectedText}"</p>
-                      {!translation && !isTranslating && (
-                        <button
-                          onClick={translateSelectedText}
-                          className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Languages className="w-4 h-4" /> Translate
-                        </button>
-                      )}
-                      {isTranslating ? (
-                        <div className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Translating...
-                        </div>
-                      ) : translation ? (
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">{translation}</p>
-                      ) : null}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             )}
             
             <div className="mt-8 w-full">
-              {error && (
-                <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl flex items-start gap-3 text-left">
-                  <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">Connection Issue</h4>
-                    <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
-                      {error.toLowerCase().includes('permission') || error.toLowerCase().includes('device') || error.toLowerCase().includes('microphone') || error.toLowerCase().includes('audio')
-                        ? "We couldn't access your microphone. Please check your browser permissions and try again."
-                        : error.toLowerCase().includes('api') || error.toLowerCase().includes('fetch') || error.toLowerCase().includes('network')
-                        ? "There was a network error connecting to the AI Voice Coach. Please check your internet connection."
-                        : "The connection to your AI Voice Coach was lost or failed to start. Please try again."}
-                    </p>
-                    <p className="text-xs text-rose-600/70 dark:text-rose-400/70 font-mono mb-3 break-words">
-                      Details: {error}
-                    </p>
-                    <button 
-                      onClick={connect}
-                      disabled={isConnecting}
-                      className="text-sm font-medium text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-500/20 hover:bg-rose-200 dark:hover:bg-rose-500/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {isConnecting ? "Reconnecting..." : "Try Reconnecting"}
-                    </button>
-                  </div>
-                </div>
-              )}
-              
               {!isConnected && !error ? (
                 <button
-                  onClick={connect}
+                  onClick={() => {
+                    if (!consumeCredits(2, 'Live Voice Session')) {
+                      alert('Insufficient credits. Please buy more credits or use your own API key.');
+                      return;
+                    }
+                    connect();
+                  }}
                   disabled={isConnecting}
                   className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                 >
@@ -533,6 +567,61 @@ Remember to keep your own speaking time concise so the student does most of the 
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedText && selectionPosition && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            style={{
+              position: 'fixed',
+              top: `${selectionPosition.top + 8}px`,
+              left: `${Math.max(16, Math.min(window.innerWidth - 300, selectionPosition.left - 150))}px`,
+              width: '300px',
+              zIndex: 50
+            }}
+            className="translation-popup p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 hover:shadow-2xl transition-shadow"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                <Languages className="w-3 h-3" /> Translation
+              </span>
+              <button onClick={() => { setSelectedText(''); setSelectionPosition(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <p className="text-sm text-slate-700 dark:text-slate-300 italic line-clamp-3">"{selectedText}"</p>
+              <button 
+                onClick={() => playAudio(selectedText)}
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition-colors shrink-0"
+                title="Listen to text"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+            </div>
+            {!translation && !isTranslating && (
+              <button
+                onClick={translateSelectedText}
+                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <Languages className="w-4 h-4" /> Translate to {language.toUpperCase()}
+              </button>
+            )}
+            {isTranslating ? (
+              <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 py-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Translating...
+              </div>
+            ) : translation ? (
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{translation}</p>
+              </div>
+            ) : null}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

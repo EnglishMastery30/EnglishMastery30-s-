@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 import { 
-  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
+  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { TrendingUp, Award, Calendar, Zap, MessageSquare, Target, Clock, Brain, Check, Smile, Activity, Mic, BookOpen } from 'lucide-react';
+import { TrendingUp, Award, Calendar, Zap, MessageSquare, Target, Clock, Brain, Check, Smile, Activity, Mic, BookOpen, Lock, Star } from 'lucide-react';
 
 // Mock data to visualize the user's progress over the last 7 days
 const performanceData = [
@@ -44,8 +45,27 @@ const aiSuggestions = [
 const confidenceLevels = ['Beginner', 'Improving', 'Confident', 'Advanced', 'Fluent'];
 const currentLevelIndex = 2; // 'Confident'
 
-export function ReportsView() {
+export function ReportsView({ isLocked = false }: { isLocked?: boolean }) {
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [recentFeedback, setRecentFeedback] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const q = query(
+      collection(db, 'feedback'),
+      where('userId', '==', auth.currentUser.uid),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const feedback = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRecentFeedback(feedback);
+    });
+
+    return () => unsub();
+  }, []);
 
   return (
     <motion.div 
@@ -64,8 +84,10 @@ export function ReportsView() {
           {(['daily', 'weekly', 'monthly'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTimeframe(t)}
+              onClick={() => { if (!isLocked) setTimeframe(t); }}
+              disabled={isLocked}
               className={`px-4 py-2 text-sm font-medium rounded-md capitalize transition-colors ${
+                isLocked ? 'opacity-50 cursor-not-allowed' :
                 timeframe === t 
                   ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -85,7 +107,14 @@ export function ReportsView() {
         </div>
 
         {/* Stepped Progress Bar */}
-        <div className="relative max-w-4xl mx-auto mb-12 px-4 md:px-0">
+        <div 
+          className="relative max-w-4xl mx-auto mb-12 px-4 md:px-0"
+          role="progressbar"
+          aria-valuenow={currentLevelIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={confidenceLevels.length}
+          aria-label="Fluency confidence progress"
+        >
           <div className="absolute top-5 left-0 w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full -z-10"></div>
           <div 
             className="absolute top-5 left-0 h-1.5 bg-indigo-500 dark:bg-indigo-400 rounded-full -z-10 transition-all duration-1000" 
@@ -292,26 +321,66 @@ export function ReportsView() {
       </div>
 
       {/* AI Suggestions */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">AI Tutor Suggestions</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {aiSuggestions.map((suggestion) => (
-            <div key={suggestion.id} className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50 hover:border-indigo-100 dark:hover:border-indigo-500/30 hover:shadow-sm transition-all">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                  {suggestion.icon}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
+          <div className="flex items-center gap-2 mb-6">
+            <TrendingUp className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">AI Tutor Suggestions</h3>
+          </div>
+          
+          <div className="space-y-4">
+            {aiSuggestions.map((suggestion) => (
+              <div key={suggestion.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    {suggestion.icon}
+                  </div>
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">{suggestion.title}</h4>
                 </div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{suggestion.title}</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {suggestion.description}
+                </p>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {suggestion.description}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        {/* Real Feedback from Sessions */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-300">
+          <div className="flex items-center gap-2 mb-6">
+            <MessageSquare className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Feedback</h3>
+          </div>
+          
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {recentFeedback.length > 0 ? (
+              recentFeedback.map((fb) => (
+                <div key={fb.id} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{fb.sessionTitle || 'Session'}</span>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: fb.rating }).map((_, i) => (
+                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 italic mb-3">"{fb.text || 'No comment provided'}"</p>
+                  <div className="flex flex-wrap gap-1">
+                    {fb.keywords?.map((word: string) => (
+                      <span key={word} className="px-2 py-0.5 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded-md border border-slate-200 dark:border-slate-700 uppercase">
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="h-40 flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center px-4">
+                <Smile className="w-10 h-10 mb-2 opacity-20" />
+                <p className="text-sm italic">Complete a session and leave feedback to see it here!</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

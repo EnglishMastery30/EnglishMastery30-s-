@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { LanguageProvider } from './contexts/LanguageContext.tsx';
+import { CreditsProvider } from './contexts/CreditsContext.tsx';
 import { registerSW } from 'virtual:pwa-register';
 
 const updateSW = registerSW({
@@ -16,7 +17,9 @@ const updateSW = registerSW({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LanguageProvider>
-      <App />
+      <CreditsProvider>
+        <App />
+      </CreditsProvider>
     </LanguageProvider>
   </StrictMode>,
 );

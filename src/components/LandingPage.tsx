@@ -125,6 +125,13 @@ export function LandingPage({ onLogin }: { onLogin: () => void }) {
           </div>
         </div>
       </main>
+
+      {/* Footer - Hidden on mobile */}
+      <footer className="hidden md:block bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 mt-auto">
+        <div className="max-w-6xl mx-auto px-4 text-center text-slate-500 dark:text-slate-400">
+          <p>&copy; {new Date().getFullYear()} English Mastery 30. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, CreditCard, Globe, Moon, Sun, LogOut, Shield, Bell, ChevronRight, Clock, Target } from 'lucide-react';
+import { User, CreditCard, Globe, Moon, Sun, LogOut, Shield, Bell, ChevronRight, Clock, Target, Key } from 'lucide-react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { CheckoutButton } from './CheckoutButton';
 import { PremiumUpgrade } from './PremiumUpgrade';
@@ -13,7 +13,9 @@ export function ProfilePage({
   onLogout,
   isPro,
   onUpgrade,
-  streak = 0
+  streak = 0,
+  userRole,
+  onRoleChange
 }: { 
   isDark: boolean; 
   onToggleDark: () => void;
@@ -21,6 +23,8 @@ export function ProfilePage({
   isPro: boolean;
   onUpgrade: () => void;
   streak?: number;
+  userRole: 'student' | 'teacher';
+  onRoleChange: (role: 'student' | 'teacher') => void;
 }) {
   const { language, setLanguage, t } = useLanguage();
   const user = auth.currentUser;
@@ -54,6 +58,12 @@ export function ProfilePage({
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm font-semibold rounded-full border border-amber-200 dark:border-amber-500/20">
               <Target className="w-4 h-4" /> {streak} Day Streak
             </div>
+            <button 
+              onClick={() => onRoleChange(userRole === 'student' ? 'teacher' : 'student')}
+              className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-semibold rounded-full border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
+            >
+              <User className="w-4 h-4" /> Switch to {userRole === 'student' ? 'Teacher' : 'Student'} View
+            </button>
           </div>
         </div>
       </div>
@@ -100,6 +110,58 @@ export function ProfilePage({
             <div className="flex justify-between items-center">
               <span className="text-slate-600 dark:text-slate-400">Status</span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">Active</span>
+            </div>
+            <button
+              onClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'subscription-management' });
+                window.dispatchEvent(event);
+              }}
+              className="w-full mt-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <CreditCard className="w-4 h-4" />
+              Manage Subscription
+            </button>
+            <button
+              onClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'api-keys' });
+                window.dispatchEvent(event);
+              }}
+              className="w-full mt-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-300 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Key className="w-4 h-4" />
+              Credits & API Keys
+            </button>
+          </div>
+        </div>
+
+        {/* Security & Privacy */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm md:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+              <Shield className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Security & Privacy</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-white">Login/Logout Notifications</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Receive an email alert whenever your account is accessed.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-white">Data Leak Alerts</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Get notified immediately if any suspicious activity or data breach is detected.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 dark:peer-focus:ring-emerald-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+              </label>
             </div>
           </div>
         </div>

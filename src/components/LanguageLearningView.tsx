@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, HelpCircle, Mic, MicOff } from 'lucide-react';
+import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, HelpCircle, Mic, MicOff, Lock } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { generateContentWithFallback } from '../utils/aiFallback';
+import { useCredits } from '../contexts/CreditsContext';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -179,14 +181,23 @@ function GrammarDrill({ messages }: { messages: Message[] }) {
   const [feedback, setFeedback] = useState<{ isCorrect: boolean, explanation: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
+
   const generateDrill = async () => {
+    if (!consumeCredits(1, 'Grammar Drill AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
     setIsLoading(true);
     setFeedback(null);
     setUserAnswer('');
     setConstructedWords([]);
     setAvailableWords([]);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
       
       const recentContext = messages
         .filter(m => m.role === 'model' || m.role === 'user')
@@ -194,7 +205,7 @@ function GrammarDrill({ messages }: { messages: Message[] }) {
         .map(m => `${m.role === 'model' ? 'Tutor' : 'Student'}: ${m.text}`)
         .join('\n');
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithFallback(ai, {
         model: 'gemini-3-flash-preview',
         contents: `Generate a grammar drill for a student learning ${language}. 
 Base the drill on the grammar rules or vocabulary recently discussed in this conversation context (if any):
@@ -277,10 +288,18 @@ Return JSON:
       : userAnswer;
 
     if (!drill || !finalAnswer.trim()) return;
+
+    if (!consumeCredits(1, 'Grammar Check AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await generateContentWithFallback(ai, {
         model: 'gemini-3-flash-preview',
         contents: `Evaluate the user's answer for the grammar drill in ${language}.
 Task: ${drill.task}
@@ -433,11 +452,330 @@ Return a JSON object:
   );
 }
 
-export function LanguageLearningView() {
-  const [viewMode, setViewMode] = useState<'chat' | 'drill'>('chat');
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'model', text: 'Hello! I am your AI Language Tutor. What language would you like to learn today, and what is your current level?' }
-  ]);
+function ConversationPractice({ isLocked = false }: { isLocked?: boolean }) {
+  const { language } = useLanguage();
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
+  const [isSetup, setIsSetup] = useState(false);
+  const [scenario, setScenario] = useState('Ordering at a restaurant');
+  const [level, setLevel] = useState('Intermediate');
+  const [goals, setGoals] = useState('Improve fluency and learn casual expressions');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const toggleListening = async () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error("Microphone permission denied:", err);
+      alert("Microphone permission is required to use speech recognition. Please allow microphone access in your browser settings.");
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== 'no-speech') {
+        alert(`Microphone error: ${event.error}. Please try again.`);
+      }
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+    
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error("Failed to start recognition:", err);
+      setIsListening(false);
+    }
+  };
+
+  const startConversation = async () => {
+    if (!consumeCredits(1, 'Conversation Setup AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
+    setIsSetup(true);
+    setIsLoading(true);
+    
+    try {
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
+      const prompt = `You are a native speaker of ${language} acting as a language partner.
+The user is at a ${level} level.
+Their goals are: ${goals}.
+The scenario for this conversation is: ${scenario}.
+
+Start the conversation naturally based on the scenario. 
+Keep your responses appropriate for their level.
+Include English translations in parentheses for difficult words if they are beginner/intermediate.`;
+
+      const response = await generateContentWithFallback(ai, {
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+      });
+      
+      setMessages([{
+        id: Date.now().toString(),
+        role: 'model',
+        text: response.text || 'Hello! Let us start our conversation.'
+      }]);
+    } catch (error) {
+      console.error(error);
+      setMessages([{
+        id: Date.now().toString(),
+        role: 'model',
+        text: 'Sorry, there was an error starting the conversation.'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLocked) return;
+    
+    if (!consumeCredits(1, 'Conversation AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
+    const userText = input.trim();
+    setInput('');
+    const newMessages = [...messages, { id: Date.now().toString(), role: 'user' as const, text: userText }];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const systemInstruction = `You are a native speaker of ${language} acting as a language partner.
+The user is at a ${level} level.
+Their goals are: ${goals}.
+The scenario is: ${scenario}.
+
+For every response, you MUST provide:
+1. Your natural conversational reply in ${language} (with English translation if helpful).
+2. Corrections: If the user made any grammar, vocabulary, or naturalness mistakes, gently correct them. If perfect, say so.
+3. Cultural Insight: A brief, relevant cultural note related to the topic or the words used.
+
+Format your response clearly using Markdown, for example:
+**Reply:** [Your conversational reply]
+
+**Corrections:** [Your corrections]
+
+**Cultural Insight:** [Your insight]`;
+
+      const contents = newMessages.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.text }]
+      }));
+
+      const response = await generateContentWithFallback(ai, {
+        model: 'gemini-3-flash-preview',
+        contents: contents,
+        config: {
+          systemInstruction
+        }
+      });
+      
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: response.text || 'Sorry, I could not generate a response.'
+      }]);
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: 'Sorry, there was an error connecting to the AI.'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isSetup) {
+    return (
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col items-center justify-center">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Conversation Practice</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Chat with an AI language partner</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Scenario / Topic</label>
+              <input 
+                type="text" 
+                value={scenario}
+                onChange={e => setScenario(e.target.value)}
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+                placeholder="e.g., Ordering at a restaurant"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Your Level</label>
+              <select 
+                value={level}
+                onChange={e => setLevel(e.target.value)}
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+              >
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Learning Goals</label>
+              <input 
+                type="text" 
+                value={goals}
+                onChange={e => setGoals(e.target.value)}
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+                placeholder="e.g., Improve fluency, learn slang"
+              />
+            </div>
+
+            <button
+              onClick={startConversation}
+              disabled={isLoading || isLocked}
+              className="w-full mt-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Start Conversation'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50/50 dark:bg-slate-950/50">
+        {messages.map((msg) => (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={msg.id} 
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div 
+              className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl ${
+                msg.role === 'user' 
+                  ? 'bg-emerald-600 text-white rounded-br-sm' 
+                  : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-sm shadow-sm'
+              }`}
+            >
+              {msg.role === 'user' ? (
+                <p className="whitespace-pre-wrap">{msg.text}</p>
+              ) : (
+                <div className="prose prose-sm sm:prose-base dark:prose-invert prose-p:leading-relaxed prose-pre:bg-slate-100 dark:prose-pre:bg-slate-900 max-w-none">
+                  <Markdown>{msg.text}</Markdown>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl rounded-bl-sm shadow-sm">
+              <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 max-w-4xl mx-auto">
+          <button
+            onClick={toggleListening}
+            disabled={isLocked}
+            className={`p-3 rounded-xl transition-colors shrink-0 shadow-sm ${
+              isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600' :
+              isListening 
+                ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 animate-pulse' 
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+            }`}
+            aria-label={isListening ? "Stop listening" : "Start listening"}
+          >
+            {isLocked ? <Lock className="w-5 h-5" /> : isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder={isLocked ? "Premium feature locked" : "Type your message..."}
+            disabled={isLocked || isLoading}
+            className={`flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white transition-all outline-none ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading || isLocked}
+            className={`p-3 text-white rounded-xl transition-colors shrink-0 shadow-sm ${isLocked ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400'}`}
+            aria-label="Send message"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean }) {
+  const [viewMode, setViewMode] = useState<'chat' | 'drill' | 'conversation'>('chat');
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = localStorage.getItem('language_tutor_messages');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse language tutor messages", e);
+      }
+    }
+    return [{ id: '1', role: 'model', text: 'Hello! I am your AI Language Tutor. What language would you like to learn today, and what is your current level?' }];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -448,6 +786,11 @@ export function LanguageLearningView() {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
+
+  useEffect(() => {
+    localStorage.setItem('language_tutor_messages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -506,6 +849,11 @@ export function LanguageLearningView() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    if (!consumeCredits(1, 'Language Chat AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
     const userText = input.trim();
     setInput('');
     
@@ -514,14 +862,16 @@ export function LanguageLearningView() {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
       
       const contents = newMessages.slice(1).map(msg => ({
         role: msg.role,
         parts: [{ text: msg.text }]
       }));
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithFallback(ai, {
         model: isAdvanced ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview',
         contents: contents,
         config: {
@@ -609,6 +959,16 @@ export function LanguageLearningView() {
             >
               Grammar Drill
             </button>
+            <button
+              onClick={() => setViewMode('conversation')}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === 'conversation'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Conversation
+            </button>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button
@@ -636,6 +996,8 @@ export function LanguageLearningView() {
 
       {viewMode === 'drill' ? (
         <GrammarDrill messages={messages} />
+      ) : viewMode === 'conversation' ? (
+        <ConversationPractice isLocked={isLocked} />
       ) : (
         <>
           {/* Messages */}
@@ -679,27 +1041,30 @@ export function LanguageLearningView() {
             <div className="flex items-center gap-2 sm:gap-3 max-w-4xl mx-auto">
               <button
                 onClick={toggleListening}
+                disabled={isLocked}
                 className={`p-3 rounded-xl transition-colors shrink-0 shadow-sm ${
+                  isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600' :
                   isListening 
                     ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 animate-pulse' 
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
                 }`}
                 aria-label={isListening ? "Stop listening" : "Start listening"}
               >
-                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                {isLocked ? <Lock className="w-5 h-5" /> : isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
-                className="flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white transition-all outline-none"
+                placeholder={isLocked ? "Premium feature locked" : "Type your message..."}
+                disabled={isLocked}
+                className={`flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white transition-all outline-none ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl transition-colors shrink-0 shadow-sm"
+                disabled={!input.trim() || isLoading || isLocked}
+                className={`p-3 text-white rounded-xl transition-colors shrink-0 shadow-sm ${isLocked ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400'}`}
                 aria-label="Send message"
               >
                 <Send className="w-5 h-5" />

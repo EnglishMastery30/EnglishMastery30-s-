@@ -8,15 +8,35 @@
         "uid": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "premium", "admin"] },
         "streak": { "type": "number" },
-        "lastLessonDate": { "type": "string" }
+        "lastLessonDate": { "type": "string" },
+        "isPro": { "type": "boolean" },
+        "completedSessions": { "type": "array" }
       },
       "required": ["uid", "role"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback after a session or call",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "sessionTitle": { "type": "string" },
+        "rating": { "type": "number" },
+        "text": { "type": "string" },
+        "keywords": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "rating"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/User" },
       "description": "User profiles"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/Feedback" },
+      "description": "User session feedback"
     }
   }
 }

@@ -1,15 +1,25 @@
 import { useState } from 'react';
-import { MapPin, Search, Loader2, Navigation, ExternalLink, Map } from 'lucide-react';
+import { MapPin, Search, Loader2, Navigation, ExternalLink, Map, Lock } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { generateContentWithFallback } from '../utils/aiFallback';
 import ReactMarkdown from 'react-markdown';
+import { useCredits } from '../contexts/CreditsContext';
 
-export function NearbyClasses() {
+export function NearbyClasses({ isLocked = false }: { isLocked?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<string>('');
   const [places, setPlaces] = useState<any[]>([]);
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
 
   const findNearbyClasses = async () => {
+    if (isLocked) return;
+
+    if (!consumeCredits(2, 'Maps Search AI')) {
+      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setResults('');
@@ -30,9 +40,11 @@ export function NearbyClasses() {
 
       const { latitude, longitude } = position.coords;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
 
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithFallback(ai, {
         model: "gemini-3-flash-preview",
         contents: "Find the best spoken English course classes, language schools, or English tutors near my current location. Provide a helpful summary of the options.",
         config: {
@@ -89,9 +101,10 @@ export function NearbyClasses() {
             </p>
             <button
               onClick={findNearbyClasses}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors"
+              disabled={isLocked}
+              className={`inline-flex items-center gap-2 px-6 py-3 font-medium rounded-xl transition-colors ${isLocked ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
             >
-              <Search className="w-5 h-5" />
+              {isLocked ? <Lock className="w-5 h-5" /> : <Search className="w-5 h-5" />}
               Find Classes Near Me
             </button>
           </div>

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Loader2, CheckCircle, Zap, Calendar, Award } from 'lucide-react';
+import { useCredits } from '../contexts/CreditsContext';
 
 const PLANS = [
   { id: 'trial', name: '1 Day Free', price: 0, duration: 1, icon: Zap, description: 'Try all premium features free for 1 day.' },
-  { id: '1_month', name: '1 Month', price: 49, duration: 30, icon: Calendar, description: 'Perfect for short-term intensive learning.' },
-  { id: '6_months', name: '6 Months', price: 149, duration: 180, icon: Award, description: 'Great value for steady progress.', popular: true },
-  { id: '1_year', name: '1 Year', price: 399, duration: 365, icon: CheckCircle, description: 'Best value for complete mastery.' }
+  { id: '1_month', name: 'Update to Premium', price: 129, duration: 30, icon: Calendar, description: 'Perfect for short-term intensive learning.' },
+  { id: '6_months', name: '6 Months', price: 499, duration: 180, icon: Award, description: 'Great value for steady progress.', popular: true },
+  { id: '1_year', name: '1 Year', price: 899, duration: 365, icon: CheckCircle, description: 'Best value for complete mastery.' }
 ];
 
 export function PremiumUpgrade() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [premiumExpiry, setPremiumExpiry] = useState<number | null>(null);
+  const { addCredits } = useCredits();
+
+  const [isPlacardLoading, setIsPlacardLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already premium
@@ -25,6 +29,18 @@ export function PremiumUpgrade() {
         localStorage.removeItem('premiumUntil');
       }
     }
+
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   const handlePayment = async (plan: typeof PLANS[0]) => {
@@ -37,6 +53,19 @@ export function PremiumUpgrade() {
       const expiry = Date.now() + plan.duration * 24 * 60 * 60 * 1000;
       localStorage.setItem('premiumUntil', expiry.toString());
       localStorage.setItem('trialUsed', 'true');
+      localStorage.setItem('subscriptionPlan', plan.name);
+
+      const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+      history.unshift({
+        id: `trial_${Date.now()}`,
+        date: Date.now(),
+        plan: plan.name,
+        amount: 0,
+        status: 'Success',
+        invoiceUrl: '#'
+      });
+      localStorage.setItem('paymentHistory', JSON.stringify(history));
+
       setIsPremium(true);
       setPremiumExpiry(expiry);
       window.dispatchEvent(new CustomEvent('premiumUpdated', { detail: expiry }));
@@ -51,10 +80,48 @@ export function PremiumUpgrade() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: plan.price, currency: 'INR' })
       });
+      
+      if (!response.ok) {
+        let errorMsg = 'Failed to create order';
+        try {
+          const errData = await response.json();
+          errorMsg = errData.error || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error: ${response.status} ${response.statusText}`;
+        }
+        alert('Error: ' + errorMsg);
+        setLoadingPlan(null);
+        return;
+      }
+
       const order = await response.json();
 
       if (order.error) {
         alert('Error: ' + order.error);
+        setLoadingPlan(null);
+        return;
+      }
+
+      if (order.mock) {
+        alert('Mock Razorpay Order Created! (Keys missing in .env). Simulating successful payment.');
+        const expiry = Date.now() + plan.duration * 24 * 60 * 60 * 1000;
+        localStorage.setItem('premiumUntil', expiry.toString());
+        localStorage.setItem('subscriptionPlan', plan.name);
+        
+        const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+        history.unshift({
+          id: `pay_mock_${Date.now()}`,
+          date: Date.now(),
+          plan: plan.name,
+          amount: plan.price,
+          status: 'Success',
+          invoiceUrl: '#'
+        });
+        localStorage.setItem('paymentHistory', JSON.stringify(history));
+
+        setIsPremium(true);
+        setPremiumExpiry(expiry);
+        window.dispatchEvent(new CustomEvent('premiumUpdated', { detail: expiry }));
         setLoadingPlan(null);
         return;
       }
@@ -70,8 +137,30 @@ export function PremiumUpgrade() {
           // Payment successful
           const expiry = Date.now() + plan.duration * 24 * 60 * 60 * 1000;
           localStorage.setItem('premiumUntil', expiry.toString());
+          localStorage.setItem('subscriptionPlan', plan.name);
+          
+          // Save payment history
+          const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+          history.unshift({
+            id: response.razorpay_payment_id || `pay_${Date.now()}`,
+            date: Date.now(),
+            plan: plan.name,
+            amount: plan.price,
+            status: 'Success',
+            invoiceUrl: '#'
+          });
+          localStorage.setItem('paymentHistory', JSON.stringify(history));
+
           setIsPremium(true);
           setPremiumExpiry(expiry);
+          
+          // Add credits based on plan
+          if (plan.id === 'monthly') {
+            addCredits(1000);
+          } else if (plan.id === 'yearly') {
+            addCredits(15000);
+          }
+          
           window.dispatchEvent(new CustomEvent('premiumUpdated', { detail: expiry }));
           alert(`Payment successful! Welcome to Premium.`);
         },
@@ -84,6 +173,12 @@ export function PremiumUpgrade() {
           color: "#4f46e5"
         }
       };
+
+      if (!(window as any).Razorpay) {
+        alert('Payment gateway is still loading. Please try again in a moment.');
+        setLoadingPlan(null);
+        return;
+      }
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any){
@@ -102,13 +197,28 @@ export function PremiumUpgrade() {
     <div className="space-y-6">
       {isPremium && premiumExpiry && (
         <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between mb-8">
-          <div>
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <CheckCircle className="w-6 h-6" /> Premium Member
-            </h3>
-            <p className="text-emerald-50 mt-1">
-              You have full access to all features. ({Math.ceil((premiumExpiry - Date.now()) / (1000 * 60 * 60 * 24))} days remaining)
-            </p>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <CheckCircle className="w-6 h-6" /> Premium Member
+              </h3>
+              <p className="text-emerald-50 mt-1">
+                You have full access to all features. ({Math.ceil((premiumExpiry - Date.now()) / (1000 * 60 * 60 * 24))} days remaining)
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                console.log("Premium placard button clicked");
+                setIsPlacardLoading(true);
+                setTimeout(() => setIsPlacardLoading(false), 1500);
+              }}
+              disabled={isPlacardLoading}
+              aria-label="Manage Premium Settings"
+              aria-busy={isPlacardLoading}
+              className="ml-4 flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold text-lg px-4 py-2 rounded-xl transition-all hover:scale-105 disabled:opacity-70 disabled:hover:scale-100"
+            >
+              {isPlacardLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : "Manage"}
+            </button>
           </div>
         </div>
       )}

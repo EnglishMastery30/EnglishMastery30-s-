@@ -1,5 +1,8 @@
+import { HashRouter, useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { curriculum, DaySession } from './data/curriculum';
+import { doc, getDoc, setDoc, onSnapshot, collection, addDoc } from 'firebase/firestore';
+import { db, auth } from './firebase';
 import { useLiveAPI } from './hooks/useLiveAPI';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { ReportsView } from './components/ReportsView';
@@ -8,29 +11,50 @@ import { LoginPage } from './components/LoginPage';
 import { ProfilePage } from './components/ProfilePage';
 import { MainDashboard } from './components/MainDashboard';
 import { SectionDashboard } from './components/SectionDashboard';
+import { DailyTalk } from './components/DailyTalk';
 import { Chatbot } from './components/Chatbot';
 import { CallsDashboard } from './components/CallsDashboard';
 import { NearbyClasses } from './components/NearbyClasses';
 import { SearchBar } from './components/SearchBar';
 import { QuickTranslate } from './components/QuickTranslate';
-import { CheckCircle, Circle, Play, Square, ChevronLeft, ChevronRight, Mic, Target, BookOpen, BarChart2, Moon, Sun, Shield, User, LayoutDashboard, ArrowRight, Volume2, Clock, AlertCircle, Star, Award, TrendingUp, Brain, MessageCircle, RefreshCw, Lock, Youtube, Share2, MapPin, Languages, ArrowUp, Home, Menu, X, Loader2 } from 'lucide-react';
+import { CheckCircle, Circle, Play, Square, ChevronLeft, ChevronRight, Mic, Target, BookOpen, BarChart2, Moon, Sun, Shield, User, Users, LayoutDashboard, ArrowRight, Volume2, Clock, AlertCircle, Star, Award, TrendingUp, Brain, MessageCircle, RefreshCw, Lock, Youtube, Share2, MapPin, Languages, ArrowUp, Home, Menu, X, Loader2, MessageSquare, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from './contexts/LanguageContext';
-import { GoogleGenAI } from '@google/genai';
 
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { LanguageLearningView } from './components/LanguageLearningView';
 import { SessionView } from './components/SessionView';
 import { PremiumUpgrade } from './components/PremiumUpgrade';
+import { VocabularyReview } from './components/VocabularyReview';
+import { GrammarDrill } from './components/GrammarDrill';
+import { SubscriptionManagement } from './components/SubscriptionManagement';
+import { ApiKeysManagement } from './components/ApiKeysManagement';
+import { GlobalDictionary } from './components/GlobalDictionary';
+import { MyFiles } from './components/MyFiles';
+import { FeedbackOverlay } from './components/FeedbackOverlay';
 
-type ViewState = 'landing' | 'login' | 'dashboard' | 'journey' | 'language-learning' | 'reports' | 'profile' | 'section' | 'calls' | 'privacy' | 'nearby' | 'translate' | 'upgrade';
+import { TeacherDashboard } from './components/TeacherDashboard';
+import { Practice } from './components/Practice';
 
-export default function App() {
+import { TutorsList } from './components/TutorsList';
+
+type ViewState = 'landing' | 'login' | 'dashboard' | 'daily-talk' | 'journey' | 'language-learning' | 'reports' | 'profile' | 'section' | 'calls' | 'privacy' | 'nearby' | 'translate' | 'upgrade' | 'vocabulary' | 'grammar-drill' | 'subscription-management' | 'api-keys' | 'my-files' | 'practice' | 'tutors';
+
+function AppContent() {
   const [selectedDay, setSelectedDay] = useState<DaySession | null>(null);
-  const [currentView, setCurrentView] = useState<ViewState>('landing');
+  const location = useLocation();
+  const navigate = useNavigate();
+  let currentView = location.pathname.substring(1) as ViewState;
+  if (!currentView || (currentView as string) === '') currentView = 'landing';
+
+  const setCurrentView = (view: ViewState) => {
+    navigate(`/${view}`);
+  };
+
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<'student' | 'teacher'>(() => (localStorage.getItem('userRole') as 'student' | 'teacher') || 'student');
   const [isPro, setIsPro] = useState(() => localStorage.getItem('isPro') === 'true');
   const [premiumUntil, setPremiumUntil] = useState<number | null>(() => {
     const stored = localStorage.getItem('premiumUntil');
@@ -43,7 +67,16 @@ export default function App() {
   const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [streak, setStreak] = useState(() => parseInt(localStorage.getItem('streak') || '0', 10));
   const [lastLessonDate, setLastLessonDate] = useState(() => localStorage.getItem('lastLessonDate') || '');
+  const [ completedSessions, setCompletedSessions] = useState<number[]>(() => {
+    const stored = localStorage.getItem('completedSessions');
+    return stored ? JSON.parse(stored) : [];
+  });
+  
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSession, setFeedbackSession] = useState('');
+
   const { t, dir } = useLanguage();
+
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -58,26 +91,132 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    import('./firebase').then(({ auth }) => {
-      const unsubscribe = auth.onAuthStateChanged((user) => {
-        setIsAuthenticated(!!user);
-        setIsAuthReady(true);
-        if (user && currentView === 'landing') {
-          setCurrentView('dashboard');
-        }
-      });
-      return () => unsubscribe();
+    if (lastLessonDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const last = new Date(lastLessonDate);
+      last.setHours(0, 0, 0, 0);
+      
+      const diffTime = today.getTime() - last.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 1) {
+        setStreak(0);
+        localStorage.setItem('streak', '0');
+      }
+    }
+  }, [lastLessonDate]);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsAuthenticated(!!user);
+      setIsAuthReady(true);
+      if (user && currentView === 'landing') {
+        setCurrentView('dashboard');
+      }
     });
+    return () => unsubscribe();
   }, [currentView]);
+
+  // Sync with Firestore
+  useEffect(() => {
+    if (!isAuthenticated || !auth.currentUser) return;
+
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    
+    // Initial fetch
+    getDoc(userDocRef).then((docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.userRole) setUserRole(data.userRole);
+        if (data.streak !== undefined) setStreak(data.streak);
+        if (data.isPro !== undefined) setIsPro(data.isPro);
+        if (data.completedSessions) setCompletedSessions(data.completedSessions);
+        if (data.lastLessonDate) setLastLessonDate(data.lastLessonDate);
+        if (data.premiumUntil) setPremiumUntil(data.premiumUntil);
+      } else {
+        // Initialize Firestore with current localStorage data if new
+        setDoc(userDocRef, {
+          uid: auth.currentUser!.uid,
+          role: 'user',
+          userRole,
+          streak,
+          isPro,
+          completedSessions,
+          lastLessonDate,
+          premiumUntil
+        });
+      }
+    });
+
+    const unsub = onSnapshot(userDocRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        // Update local state if Firestore changed (from another device)
+        if (data.streak !== undefined) setStreak(data.streak);
+        if (data.completedSessions) setCompletedSessions(data.completedSessions);
+      }
+    });
+
+    return () => unsub();
+  }, [isAuthenticated]);
+
+  const updateFirestoreProfile = (updates: any) => {
+    if (isAuthenticated && auth.currentUser) {
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      setDoc(userDocRef, updates, { merge: true });
+    }
+  };
+
+  const handleFeedbackSubmit = async (feedback: { rating: number; text: string; keywords: string[] }) => {
+    if (isAuthenticated && auth.currentUser) {
+      try {
+        await addDoc(collection(db, 'feedback'), {
+          userId: auth.currentUser.uid,
+          sessionTitle: feedbackSession,
+          rating: feedback.rating,
+          text: feedback.text,
+          keywords: feedback.keywords,
+          createdAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Error storing feedback:", err);
+      }
+    }
+  };
 
   const handleLessonComplete = () => {
     const today = new Date().toDateString();
+    let newStreak = streak;
+    let newLastDate = lastLessonDate;
+
     if (lastLessonDate !== today) {
-      const newStreak = streak + 1;
+      newStreak = streak + 1;
+      newLastDate = today;
       setStreak(newStreak);
       setLastLessonDate(today);
       localStorage.setItem('streak', newStreak.toString());
       localStorage.setItem('lastLessonDate', today);
+    }
+    
+    let newCompleted = completedSessions;
+    if (selectedDay) {
+      if (!completedSessions.includes(selectedDay.day)) {
+        newCompleted = [...completedSessions, selectedDay.day];
+        setCompletedSessions(newCompleted);
+        localStorage.setItem('completedSessions', JSON.stringify(newCompleted));
+      }
+    }
+
+    updateFirestoreProfile({
+      streak: newStreak,
+      lastLessonDate: newLastDate,
+      completedSessions: newCompleted
+    });
+
+    if (selectedDay) {
+      setFeedbackSession(`Day ${selectedDay.day}: ${selectedDay.topic}`);
+      setShowFeedback(true);
     }
   };
 
@@ -110,6 +249,13 @@ export default function App() {
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    const handleNavigate = (e: Event) => {
+      const customEvent = e as CustomEvent<ViewState>;
+      setCurrentView(customEvent.detail);
+    };
+    window.addEventListener('navigate', handleNavigate);
+    return () => window.removeEventListener('navigate', handleNavigate);
   }, []);
 
   // Scroll to top when navigating between views, sections, or days
@@ -143,15 +289,11 @@ export default function App() {
   }, [trialStartDate]);
 
   useEffect(() => {
-    if (isLocked && currentView !== 'profile') {
-      setCurrentView('profile');
-      setSelectedDay(null);
-    }
-  }, [isLocked, currentView]);
-
-  useEffect(() => {
     const handleNavigate = (e: Event) => {
       const customEvent = e as CustomEvent<ViewState>;
+      if (isLocked && customEvent.detail !== 'profile' && customEvent.detail !== 'upgrade') {
+        return;
+      }
       setCurrentView(customEvent.detail);
       setSelectedDay(null);
     };
@@ -165,7 +307,7 @@ export default function App() {
       window.removeEventListener('navigate', handleNavigate);
       window.removeEventListener('premiumUpdated', handlePremiumUpdate);
     };
-  }, []);
+  }, [isLocked]);
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
@@ -205,26 +347,30 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <AnimatePresence mode="wait">
-        {currentView === 'login' ? (
-          <LoginPage key="login" onLoginSuccess={handleLoginSuccess} />
-        ) : (
-          <LandingPage key="landing" onLogin={() => setCurrentView('login')} />
-        )}
+        <Routes location={location} key={location.pathname}>
+          <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/" element={<LandingPage onLogin={() => setCurrentView('login')} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </AnimatePresence>
     );
   }
 
   const navTabs: { id: string, label: string, icon: any, mobileOnly?: boolean }[] = [
     { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    { id: 'journey', label: t('nav.curriculum'), icon: BookOpen },
-    { id: 'language-learning', label: 'Tutor', icon: Brain },
+    { id: 'practice', label: 'Practice', icon: BookOpen },
     { id: 'calls', label: 'Calls', icon: MessageCircle },
+    { id: 'journey', label: t('nav.curriculum'), icon: BookOpen },
+    { id: 'daily-talk', label: 'Daily Talk', icon: MessageSquare },
+    { id: 'language-learning', label: 'AI Tutor', icon: Brain },
+    { id: 'tutors', label: 'Tutors', icon: Users },
     { id: 'nearby', label: 'Nearby', icon: MapPin },
     { id: 'reports', label: t('nav.reports'), icon: BarChart2 },
     { id: 'translate', label: 'Translate', icon: Languages }
   ];
 
   const handleSwipe = (direction: number) => {
+    if (isLocked) return;
     const currentIndex = navTabs.findIndex(t => t.id === currentView);
     let newIndex = currentIndex + direction;
     if (newIndex < 0) newIndex = 0;
@@ -239,11 +385,12 @@ export default function App() {
 
   return (
     <div dir={dir} className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-all duration-300 ${isMobileMenuOpen ? 'overflow-hidden' : ''}`}>
+      <GlobalDictionary />
       <header className={`bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 shrink-0">
             <button 
-              className="md:hidden p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              className="lg:hidden p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open menu"
             >
@@ -264,6 +411,7 @@ export default function App() {
             <SearchBar 
               onNavigate={(view) => { setCurrentView(view as ViewState); setSelectedDay(null); }} 
               onSelectDay={setSelectedDay} 
+              completedSessions={completedSessions}
             />
           </div>
           
@@ -282,59 +430,18 @@ export default function App() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={async () => {
-                const inviteLink = `${window.location.origin}?invite=true`;
-                
-                const handleShareReward = () => {
-                  const hasShared = localStorage.getItem('hasSharedInvite');
-                  if (!hasShared) {
-                    const currentExpiry = premiumUntil && premiumUntil > Date.now() ? premiumUntil : Date.now();
-                    const newExpiry = currentExpiry + 3 * 24 * 60 * 60 * 1000;
-                    localStorage.setItem('premiumUntil', newExpiry.toString());
-                    localStorage.setItem('hasSharedInvite', 'true');
-                    setPremiumUntil(newExpiry);
-                    alert('Thanks for sharing! You have been rewarded with 3 days of free Premium!');
-                  }
-                };
-
-                if (navigator.share) {
-                  try {
-                    await navigator.share({
-                      title: 'English Mastery 30',
-                      text: 'Join me and get 3 days of free Premium!',
-                      url: inviteLink
-                    });
-                    handleShareReward();
-                    return;
-                  } catch (err) {
-                    console.log('Share canceled or failed', err);
-                  }
-                }
-                
-                try {
-                  await navigator.clipboard.writeText(inviteLink);
-                  alert('Invite link copied! Share it with friends to give them 3 days of free Premium.');
-                  handleShareReward();
-                } catch (err) {
-                  const textArea = document.createElement("textarea");
-                  textArea.value = inviteLink;
-                  document.body.appendChild(textArea);
-                  textArea.select();
-                  try {
-                    document.execCommand('copy');
-                    alert('Invite link copied! Share it with friends to give them 3 days of free Premium.');
-                    handleShareReward();
-                  } catch (e) {
-                    prompt("Copy this link to invite friends:", inviteLink);
-                    handleShareReward();
-                  }
-                  document.body.removeChild(textArea);
+              onClick={() => {
+                const newRole = userRole === 'student' ? 'teacher' : 'student';
+                setUserRole(newRole);
+                localStorage.setItem('userRole', newRole);
+                if (newRole === 'teacher' && currentView !== 'dashboard') {
+                   setCurrentView('dashboard');
                 }
               }}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 text-sm font-bold rounded-lg shadow-sm transition-all"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold rounded-lg shadow-sm transition-all border border-slate-200 dark:border-slate-700"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Invite Friends</span>
+              <Users className="w-4 h-4" />
+              <span>Switch to {userRole === 'student' ? 'Teacher' : 'Student'} View</span>
             </motion.button>
             
             <motion.button
@@ -362,119 +469,70 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile Top Navigation Carousel */}
-      <nav className={`md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 overflow-hidden sticky top-16 z-10 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
-        <div className="flex flex-col items-center py-3">
-          <div className="w-full flex items-center justify-between px-4 mb-2">
-            <button 
-              onClick={() => handleSwipe(-1)} 
-              disabled={navTabs.findIndex(t => t.id === currentView) <= 0}
-              className="p-2 text-slate-400 disabled:opacity-30"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            
-            <div className="relative w-48 h-8 flex items-center justify-center overflow-hidden">
-              <AnimatePresence mode="popLayout" custom={swipeDirection}>
-                <motion.div
-                  key={currentView}
-                  custom={swipeDirection}
-                  variants={{
-                    enter: (d: number) => ({ opacity: 0, x: d > 0 ? 50 : -50 }),
-                    center: { opacity: 1, x: 0 },
-                    exit: (d: number) => ({ opacity: 0, x: d > 0 ? -50 : 50 })
-                  }}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.2 }}
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={1}
-                  onDragEnd={(e, { offset }) => {
-                    const swipe = offset.x;
-                    if (swipe < -50) {
-                      handleSwipe(1);
-                    } else if (swipe > 50) {
-                      handleSwipe(-1);
-                    }
-                  }}
-                  className="absolute flex items-center gap-2 font-bold text-indigo-600 dark:text-indigo-400 cursor-grab active:cursor-grabbing"
-                >
-                  {(() => {
-                    const tab = navTabs.find(t => t.id === currentView) || navTabs[0];
-                    return (
-                      <>
-                        <tab.icon className="w-5 h-5" />
-                        <span>{tab.label}</span>
-                      </>
-                    );
-                  })()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <button 
-              onClick={() => handleSwipe(1)} 
-              disabled={navTabs.findIndex(t => t.id === currentView) >= navTabs.length - 1 || navTabs.findIndex(t => t.id === currentView) === -1}
-              className="p-2 text-slate-400 disabled:opacity-30"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <div className="flex gap-1.5">
-            {navTabs.map((tab, i) => (
-              <div 
-                key={tab.id} 
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  navTabs.findIndex(t => t.id === currentView) === i 
-                    ? 'bg-indigo-600 dark:bg-indigo-400' 
-                    : 'bg-slate-200 dark:bg-slate-700'
-                }`} 
-              />
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      <nav className={`hidden md:block bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          {/* Desktop Navigation */}
-          <div className="flex items-center justify-center gap-4">
+      <div className="flex max-w-[1600px] mx-auto min-h-[calc(100vh-4rem)]">
+        {/* Persistent Sidebar for Large Screens */}
+        <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-20 overflow-x-hidden">
+          <div className="p-4 space-y-1">
+            <div className="px-3 mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Menu</div>
             {navTabs.map((tab) => {
               const isActive = currentView === tab.id && !selectedDay;
               return (
-                <motion.button
+                <button
                   key={tab.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={() => { 
                     if (isLocked) return;
                     setCurrentView(tab.id as ViewState); 
                     setSelectedDay(null); 
                   }}
                   disabled={isLocked}
-                  className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-colors whitespace-nowrap ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                     isActive 
-                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' 
+                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm' 
                       : isLocked 
-                        ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                        ? 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <tab.icon className={`w-5 h-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
+                  <span>{tab.label}</span>
+                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></div>}
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          {/* Scrollable Ribbon for Mobile/Tablet */}
+          <nav className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-20 flex items-center overflow-x-auto hide-scrollbar whitespace-nowrap p-2 scroll-smooth">
+            {navTabs.map((tab) => {
+              const isActive = currentView === tab.id && !selectedDay;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (isLocked) return;
+                    setCurrentView(tab.id as ViewState);
+                    setSelectedDay(null);
+                  }}
+                  disabled={isLocked}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all shrink-0 mr-2 ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
                   <span>{tab.label}</span>
-                </motion.button>
+                </button>
               );
             })}
-          </div>
-        </div>
-      </nav>
+          </nav>
 
-      <main className={`max-w-6xl mx-auto px-4 py-8 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
-        {isLocked && currentView === 'profile' && (
-          <div className="mb-8 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-6 rounded-2xl flex items-start gap-4">
+          <main className={`px-4 py-6 pb-24 lg:pb-8 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
+        {isLocked && (
+          <div className="mb-8 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-6 rounded-2xl flex items-start gap-4 cursor-pointer" onClick={() => setCurrentView('profile')}>
             <div className="p-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl">
               <Lock className="w-6 h-6" />
             </div>
@@ -492,6 +550,7 @@ export default function App() {
             <SessionView 
               key="session" 
               session={selectedDay} 
+              nextSession={curriculum.find(d => d.day === selectedDay.day + 1)}
               onBack={() => setSelectedDay(null)}
               onComplete={handleLessonComplete}
               onNextSession={() => {
@@ -504,65 +563,195 @@ export default function App() {
                 }
               }}
             />
-          ) : currentView === 'dashboard' ? (
-            <MainDashboard 
-              key="dashboard" 
-              streak={streak}
-              isPro={hasActivePro}
-              onSelectDay={setSelectedDay} 
-              onSelectSection={(section) => {
-                setSelectedSection(section);
-                setCurrentView('section');
-              }}
-            />
-          ) : currentView === 'section' && selectedSection ? (
-            <SectionDashboard 
-              key="section"
-              sectionName={selectedSection}
-              onBack={() => {
-                setCurrentView('dashboard');
-                setSelectedSection(null);
-              }}
-            />
-          ) : currentView === 'journey' ? (
-            <JourneyView key="journey" onSelectDay={setSelectedDay} />
-          ) : currentView === 'language-learning' ? (
-            <LanguageLearningView key="language-learning" />
-          ) : currentView === 'calls' ? (
-            <CallsDashboard key="calls" isPro={hasActivePro} trialStartDate={trialStartDate} />
-          ) : currentView === 'nearby' ? (
-            <NearbyClasses key="nearby" />
-          ) : currentView === 'translate' ? (
-            <div key="translate" className="max-w-3xl mx-auto py-8">
-              <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">Translate</h2>
-              <QuickTranslate />
-            </div>
-          ) : currentView === 'privacy' ? (
-            <PrivacyPolicy key="privacy" onBack={() => setCurrentView('profile')} />
-          ) : currentView === 'reports' ? (
-            <ReportsView key="reports" />
-          ) : currentView === 'profile' ? (
-            <ProfilePage 
-              key="profile" 
-              isDark={isDark} 
-              onToggleDark={() => setIsDark(!isDark)} 
-              onLogout={handleLogout}
-              isPro={hasActivePro}
-              onUpgrade={() => {
-                setIsPro(true);
-                localStorage.setItem('isPro', 'true');
-              }}
-              streak={streak}
-            />
-          ) : currentView === 'upgrade' ? (
-            <div key="upgrade" className="max-w-3xl mx-auto py-8">
-              <PremiumUpgrade />
-            </div>
-          ) : null}
+          ) : (
+            <Routes location={location} key={location.pathname}>
+              <Route path="/dashboard" element={
+                userRole === 'teacher' ? (
+                  <TeacherDashboard />
+                ) : (
+                  <MainDashboard 
+                    streak={streak}
+                    isPro={hasActivePro}
+                    isLocked={isLocked}
+                    completedSessions={completedSessions}
+                    onSelectDay={setSelectedDay} 
+                    onSelectSection={(section) => {
+                      setSelectedSection(section);
+                      setCurrentView('section');
+                    }}
+                  />
+                )
+              } />
+              <Route path="/daily-talk" element={
+                <div className="max-w-4xl mx-auto py-4">
+                  <DailyTalk isLocked={isLocked} />
+                </div>
+              } />
+              <Route path="/section" element={
+                selectedSection ? (
+                  <SectionDashboard 
+                    sectionName={selectedSection}
+                    isLocked={isLocked}
+                    onBack={() => {
+                      setCurrentView('dashboard');
+                      setSelectedSection(null);
+                    }}
+                  />
+                ) : <Navigate to="/dashboard" replace />
+              } />
+              <Route path="/journey" element={
+                <JourneyView onSelectDay={setSelectedDay} isLocked={isLocked} completedSessions={completedSessions} />
+              } />
+              <Route path="/language-learning" element={
+                <LanguageLearningView isLocked={isLocked} />
+              } />
+              <Route path="/tutors" element={
+                <TutorsList isLocked={isLocked} />
+              } />
+              <Route path="/calls" element={
+                <CallsDashboard 
+                  isPro={hasActivePro} 
+                  trialStartDate={trialStartDate} 
+                  isLocked={isLocked}
+                  onCallEnd={(userName) => {
+                    setFeedbackSession(`Call with ${userName}`);
+                    setShowFeedback(true);
+                  }}
+                />
+              } />
+              <Route path="/nearby" element={
+                <NearbyClasses isLocked={isLocked} />
+              } />
+              <Route path="/translate" element={
+                <div className="max-w-3xl mx-auto py-8">
+                  <h2 className="text-2xl font-bold mb-6 text-slate-900 dark:text-white">Translate</h2>
+                  <QuickTranslate isLocked={isLocked} />
+                </div>
+              } />
+              <Route path="/privacy" element={
+                <PrivacyPolicy onBack={() => setCurrentView('profile')} />
+              } />
+              <Route path="/reports" element={
+                <ReportsView isLocked={isLocked} />
+              } />
+              <Route path="/profile" element={
+                <ProfilePage 
+                  isDark={isDark} 
+                  onToggleDark={() => setIsDark(!isDark)} 
+                  onLogout={handleLogout}
+                  isPro={hasActivePro}
+                  onUpgrade={() => {
+                    setIsPro(true);
+                    localStorage.setItem('isPro', 'true');
+                  }}
+                  streak={streak}
+                  userRole={userRole}
+                  onRoleChange={(role) => {
+                    setUserRole(role);
+                    localStorage.setItem('userRole', role);
+                  }}
+                />
+              } />
+              <Route path="/upgrade" element={
+                <div className="max-w-3xl mx-auto py-8">
+                  <PremiumUpgrade />
+                </div>
+              } />
+              <Route path="/subscription-management" element={
+                <SubscriptionManagement onBack={() => setCurrentView('profile')} />
+              } />
+              <Route path="/api-keys" element={
+                <ApiKeysManagement onBack={() => setCurrentView('profile')} />
+              } />
+              <Route path="/vocabulary" element={
+                <div className="max-w-3xl mx-auto py-8">
+                  <VocabularyReview onBack={() => setCurrentView('dashboard')} isLocked={isLocked} />
+                </div>
+              } />
+              <Route path="/practice" element={
+                <Practice isLocked={isLocked} completedSessions={completedSessions} />
+              } />
+              <Route path="/grammar-drill" element={
+                <div className="max-w-4xl mx-auto py-8">
+                  <GrammarDrill onBack={() => setCurrentView('dashboard')} isLocked={isLocked} />
+                </div>
+              } />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          )}
         </AnimatePresence>
-      </main>
+          </main>
+        </div>
+      </div>
 
-      {/* Mobile Hamburger Menu Drawer */}
+      {/* Footer - Replaced with AI Tutorial Banner */}
+      <footer className="bg-indigo-900 text-white mt-auto py-12 relative overflow-hidden hidden md:block border-t border-indigo-800">
+        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/tech/1920/1080?blur=4')] mix-blend-overlay opacity-20 bg-cover bg-center"></div>
+        <div className="absolute top-0 right-0 p-12 opacity-10">
+          <Brain className="w-64 h-64 text-white" />
+        </div>
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left max-w-2xl">
+              <h3 className="text-3xl font-bold tracking-tight mb-2 text-white">Experience our new AI Tutorial</h3>
+              <p className="text-indigo-200 text-lg">
+                Practice real-world English conversations anytime with our advanced AI Tutor. Get instant feedback on grammar, pronunciation, and fluency in a safe, judgment-free space.
+              </p>
+            </div>
+            <button 
+              onClick={() => {
+                if (!isLocked) {
+                  setCurrentView('language-learning');
+                  setSelectedDay(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="px-8 py-4 bg-white text-indigo-900 rounded-2xl font-bold text-lg hover:bg-indigo-50 transition-all shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center gap-3 whitespace-nowrap"
+            >
+              <Brain className="w-6 h-6" />
+              Try AI Tutor Now
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* Mobile Bottom Navigation Bar - Visible on all but LG screens */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="flex items-center justify-around px-2 py-2">
+          {[
+            { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+            { id: 'practice', label: 'Practice', icon: BookOpen },
+            { id: 'language-learning', label: 'AI Tutor', icon: Brain },
+            { id: 'journey', label: 'Learn', icon: BookOpen },
+            { id: 'profile', label: 'Profile', icon: User }
+          ].map((tab) => {
+            const isActive = currentView === tab.id && !selectedDay;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  if (isLocked && tab.id !== 'profile') return;
+                  setCurrentView(tab.id as ViewState);
+                  setSelectedDay(null);
+                }}
+                disabled={isLocked && tab.id !== 'profile'}
+                className={`flex flex-col items-center justify-center w-16 h-14 rounded-xl transition-colors ${
+                  isActive
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : isLocked && tab.id !== 'profile'
+                      ? 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <tab.icon className={`w-6 h-6 mb-1 ${isActive ? 'fill-indigo-100 dark:fill-indigo-900/30' : ''}`} />
+                <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Mobile Hamburger Menu Drawer - Visible on all but LG screens */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -571,14 +760,14 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
             />
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-              className="fixed top-0 left-0 bottom-0 w-3/4 max-w-sm bg-white dark:bg-slate-900 z-50 shadow-2xl md:hidden flex flex-col"
+              className="fixed top-0 left-0 bottom-0 w-3/4 max-w-sm bg-white dark:bg-slate-900 z-50 shadow-2xl lg:hidden flex flex-col"
             >
               <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div 
@@ -671,20 +860,37 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-6 left-6 z-50 p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+            className="fixed bottom-[4.5rem] md:bottom-6 right-4 md:right-6 z-50 p-2.5 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
             aria-label="Scroll to top"
           >
-            <ArrowUp className="w-6 h-6" />
+            <ArrowUp className="w-5 h-5" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      <Chatbot />
+      {currentView === 'dashboard' && !selectedDay && (
+        <Chatbot isLocked={isLocked} />
+      )}
+
+      <FeedbackOverlay 
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        onSubmit={handleFeedbackSubmit}
+        sessionTitle={feedbackSession}
+      />
     </div>
   );
 }
 
-function JourneyView({ onSelectDay }: { onSelectDay: (day: DaySession) => void; key?: string }) {
+export default function App() {
+  return (
+    <HashRouter>
+      <AppContent />
+    </HashRouter>
+  );
+}
+
+function JourneyView({ onSelectDay, isLocked = false, completedSessions = [] }: { onSelectDay: (day: DaySession) => void; key?: string; isLocked?: boolean; completedSessions?: number[] }) {
   const levels = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
   
   const playAudio = (e: React.MouseEvent, text: string) => {
@@ -732,14 +938,14 @@ function JourneyView({ onSelectDay }: { onSelectDay: (day: DaySession) => void; 
                   <div
                     key={day.day}
                     role="button"
-                    tabIndex={0}
-                    onClick={() => onSelectDay(day)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectDay(day); }}
-                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all text-left group flex flex-col h-full cursor-pointer"
+                    tabIndex={isLocked ? -1 : 0}
+                    onClick={() => { if (!isLocked) onSelectDay(day); }}
+                    onKeyDown={(e) => { if (!isLocked && (e.key === 'Enter' || e.key === ' ')) onSelectDay(day); }}
+                    className={`bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/50 cursor-pointer'} transition-all text-left group flex flex-col h-full`}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-full">
-                        Day {day.day}
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                        {isLocked ? <Lock className="w-3 h-3" /> : completedSessions.includes(day.day) ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : null} Day {day.day}
                       </span>
                       <button 
                         onClick={(e) => playAudio(e, `${day.topic}. ${day.description}`)}

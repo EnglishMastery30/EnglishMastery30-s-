@@ -12,21 +12,32 @@ export function AudioVisualizer({ volume, isConnected }: { volume: number, isCon
 
     const interval = setInterval(() => {
       setBars(prev => prev.map((_, i) => {
-        // Create a dynamic wave effect based on volume and position
-        const baseHeight = volume * 100;
-        const randomFactor = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
-        const positionFactor = Math.sin((i / 12) * Math.PI) * 1.5; // Center bars are higher
+        // Create a more sophisticated wave effect
+        // Base height from volume, scaled appropriately
+        const baseHeight = volume * 150;
         
-        let height = baseHeight * randomFactor * positionFactor * 3;
+        // Use sine wave based on index and time for a flowing movement
+        const time = Date.now() / 200;
+        const wave = Math.sin(time + i * 0.5) * 15 * (volume + 0.1);
         
-        // Add a minimum bounce when connected
-        if (height < 5) height = 5 + Math.random() * 5;
+        // Distribution factor - middle bars are more reactive
+        const distIndex = i - 5.5; // shift to center at index 5.5
+        const positionFactor = Math.exp(-(distIndex * distIndex) / 20); 
+        
+        let height = (baseHeight * positionFactor * (0.8 + Math.random() * 0.4)) + wave;
+        
+        // Add a secondary random jitter for organic feel
+        height += (Math.random() - 0.5) * 10 * volume;
+        
+        // Add a minimum movement when connected
+        if (height < 6) height = 6 + Math.sin(time * 2 + i) * 3;
+        
         // Cap maximum height
         if (height > 100) height = 100;
         
         return height;
       }));
-    }, 50);
+    }, 40);
 
     return () => clearInterval(interval);
   }, [volume, isConnected]);

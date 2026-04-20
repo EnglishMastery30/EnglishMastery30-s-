@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Languages, ExternalLink } from 'lucide-react';
+import { Languages, ExternalLink, Lock } from 'lucide-react';
 
-export function QuickTranslate() {
+export function QuickTranslate({ isLocked = false }: { isLocked?: boolean }) {
   const [translateText, setTranslateText] = useState('');
 
   const handleTranslate = (e: React.FormEvent) => {
@@ -26,16 +26,17 @@ export function QuickTranslate() {
         <textarea
           value={translateText}
           onChange={(e) => setTranslateText(e.target.value)}
-          placeholder="Enter text to translate..."
-          className="flex-1 w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none min-h-[120px]"
+          placeholder={isLocked ? "Premium feature locked" : "Enter text to translate..."}
+          disabled={isLocked}
+          className={`flex-1 w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-3 sm:p-4 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none min-h-[120px] ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
         <button 
           type="submit"
-          disabled={!translateText.trim()}
-          className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white font-medium rounded-xl transition-colors mt-auto"
+          disabled={!translateText.trim() || isLocked}
+          className={`flex items-center justify-center gap-2 w-full py-3 font-medium rounded-xl transition-colors mt-auto ${isLocked ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white'}`}
         >
           <span>Translate in Google</span>
-          <ExternalLink className="w-4 h-4" />
+          {isLocked ? <Lock className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
         </button>
       </form>
     </div>

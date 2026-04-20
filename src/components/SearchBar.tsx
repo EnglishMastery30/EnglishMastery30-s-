@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, BookOpen, LayoutDashboard, MessageCircle, MapPin, BarChart2, User, ChevronRight } from 'lucide-react';
+import { Search, BookOpen, LayoutDashboard, MessageCircle, MapPin, BarChart2, User, ChevronRight, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { curriculum, DaySession } from '../data/curriculum';
 
@@ -15,12 +15,38 @@ interface SearchResult {
 interface SearchBarProps {
   onNavigate: (view: string) => void;
   onSelectDay: (day: DaySession) => void;
+  completedSessions?: number[];
 }
 
-export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
+const HighlightText = ({ text, highlight }: { text: string; highlight: string }) => {
+  if (!highlight.trim()) return <>{text}</>;
+  
+  const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escapedHighlight})`, 'gi');
+  const parts = text.split(regex);
+  
+  return (
+    <>
+      {parts.map((part, i) => 
+        regex.test(part) ? (
+          <mark key={i} className="bg-indigo-200 dark:bg-indigo-900/80 text-indigo-900 dark:text-indigo-100 rounded-sm px-0.5 font-medium">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+};
+
+export function SearchBar({ onNavigate, onSelectDay, completedSessions = [] }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [filterDifficulty, setFilterDifficulty] = useState<string>('All');
+  const [filterStatus, setFilterStatus] = useState<string>('All');
+  const [showFilters, setShowFilters] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const features: SearchResult[] = [
@@ -33,25 +59,39 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
   ];
 
   useEffect(() => {
-    if (!query.trim()) {
+    const hasFilters = filterDifficulty !== 'All' || filterStatus !== 'All';
+    if (!query.trim() && !hasFilters) {
       setResults([]);
       return;
     }
 
     const lowerQuery = query.toLowerCase();
     
-    // Search features
-    const matchedFeatures = features.filter(f => 
-      f.title.toLowerCase().includes(lowerQuery) || 
-      (f.description && f.description.toLowerCase().includes(lowerQuery))
-    );
+    // Search features (only if no lesson-specific filters are applied)
+    let matchedFeatures: SearchResult[] = [];
+    if (!hasFilters) {
+      matchedFeatures = features.filter(f => 
+        f.title.toLowerCase().includes(lowerQuery) || 
+        (f.description && f.description.toLowerCase().includes(lowerQuery))
+      );
+    }
 
     // Search lessons
-    const matchedLessons = curriculum.filter(d => 
-      d.topic.toLowerCase().includes(lowerQuery) || 
-      d.description.toLowerCase().includes(lowerQuery) ||
-      `day ${d.day}`.includes(lowerQuery)
-    ).map(d => ({
+    const matchedLessons = curriculum.filter(d => {
+      const matchesQuery = !query.trim() || 
+        d.topic.toLowerCase().includes(lowerQuery) || 
+        d.description.toLowerCase().includes(lowerQuery) ||
+        `day ${d.day}`.includes(lowerQuery);
+        
+      const matchesDifficulty = filterDifficulty === 'All' || d.level === filterDifficulty;
+      
+      const isCompleted = completedSessions.includes(d.day);
+      const matchesStatus = filterStatus === 'All' || 
+                           (filterStatus === 'Completed' && isCompleted) || 
+                           (filterStatus === 'Incomplete' && !isCompleted);
+                           
+      return matchesQuery && matchesDifficulty && matchesStatus;
+    }).map(d => ({
       type: 'lesson' as const,
       id: `day-${d.day}`,
       title: `Day ${d.day}: ${d.topic}`,
@@ -60,12 +100,13 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
     }));
 
     setResults([...matchedFeatures, ...matchedLessons].slice(0, 8)); // Limit to 8 results
-  }, [query]);
+  }, [query, filterDifficulty, filterStatus, completedSessions]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setShowFilters(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -74,7 +115,10 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
 
   const handleSelect = (result: SearchResult) => {
     setIsOpen(false);
+    setShowFilters(false);
     setQuery('');
+    setFilterDifficulty('All');
+    setFilterStatus('All');
     
     if (result.type === 'feature') {
       onNavigate(result.id);
@@ -83,15 +127,18 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
     }
   };
 
+  const hasActiveFilters = filterDifficulty !== 'All' || filterStatus !== 'All';
+  const shouldShowDropdown = isOpen && (query.trim() || hasActiveFilters || showFilters);
+
   return (
     <div ref={wrapperRef} className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg z-50">
-      <div className="relative">
+      <div className="relative flex items-center">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-slate-400" />
         </div>
         <input
           type="text"
-          className="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+          className="block w-full pl-10 pr-10 py-2 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
           placeholder="Search lessons, features..."
           value={query}
           onChange={(e) => {
@@ -99,20 +146,63 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
             setIsOpen(true);
           }}
           onFocus={() => {
-            if (query.trim()) setIsOpen(true);
+            setIsOpen(true);
           }}
         />
+        <button
+          onClick={() => {
+            setShowFilters(!showFilters);
+            setIsOpen(true);
+          }}
+          className={`absolute inset-y-0 right-0 pr-3 flex items-center ${hasActiveFilters ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+        >
+          <Filter className="h-4 w-4" />
+        </button>
       </div>
 
       <AnimatePresence>
-        {isOpen && query.trim() && (
+        {shouldShowDropdown && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden"
+            className="absolute mt-2 w-full bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col"
           >
+            {/* Filters Section */}
+            {showFilters && (
+              <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 space-y-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Difficulty</label>
+                  <div className="flex gap-2">
+                    {['All', 'Beginner', 'Intermediate', 'Advanced'].map(level => (
+                      <button
+                        key={level}
+                        onClick={() => setFilterDifficulty(level)}
+                        className={`px-2 py-1 text-xs rounded-md transition-colors ${filterDifficulty === level ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 font-medium' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400">Status</label>
+                  <div className="flex gap-2">
+                    {['All', 'Completed', 'Incomplete'].map(status => (
+                      <button
+                        key={status}
+                        onClick={() => setFilterStatus(status)}
+                        className={`px-2 py-1 text-xs rounded-md transition-colors ${filterStatus === status ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 font-medium' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {results.length > 0 ? (
               <ul className="max-h-96 overflow-y-auto py-2">
                 {results.map((result) => (
@@ -131,7 +221,7 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                            {result.title}
+                            <HighlightText text={result.title} highlight={query} />
                           </p>
                           <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0">
                             {result.type}
@@ -139,7 +229,7 @@ export function SearchBar({ onNavigate, onSelectDay }: SearchBarProps) {
                         </div>
                         {result.description && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                            {result.description}
+                            <HighlightText text={result.description} highlight={query} />
                           </p>
                         )}
                       </div>

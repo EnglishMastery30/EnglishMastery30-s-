@@ -5,9 +5,10 @@ export type TranscriptSegment = {
   id: number;
   text: string;
   isFinal: boolean;
+  speaker: 'user' | 'ai';
 };
 
-export function useLiveAPI(systemInstruction: string) {
+export function useLiveAPI(systemInstruction: string, apiKey?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function useLiveAPI(systemInstruction: string) {
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const sessionRef = useRef<any>(null);
   
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
@@ -34,13 +36,22 @@ export function useLiveAPI(systemInstruction: string) {
     transcriptIdRef.current = 0;
     
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const keyToUse = apiKey || process.env.GEMINI_API_KEY;
+      if (!keyToUse) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey: keyToUse });
       
       audioContextRef.current = new AudioContext({ sampleRate: 16000 });
       const audioCtx = audioContextRef.current;
       
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(e => {
+        throw new Error("Microphone access denied. Please allow microphone permissions.");
+      });
       sourceRef.current = audioCtx.createMediaStreamSource(streamRef.current);
+      
+      analyserRef.current = audioCtx.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      sourceRef.current.connect(analyserRef.current);
+
       processorRef.current = audioCtx.createScriptProcessor(4096, 1, 1);
       
       let sessionPromise: any;
@@ -54,6 +65,7 @@ export function useLiveAPI(systemInstruction: string) {
           },
           systemInstruction,
           inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {
@@ -61,14 +73,17 @@ export function useLiveAPI(systemInstruction: string) {
             setIsConnecting(false);
             
             processorRef.current!.onaudioprocess = (e) => {
+              if (!isConnected) return;
+
               const inputData = e.inputBuffer.getChannelData(0);
               
-              // Calculate volume for visualizer
-              let sum = 0;
-              for (let i = 0; i < inputData.length; i++) {
-                sum += inputData[i] * inputData[i];
+              // Calculate volume for visualizer using analyser for better responsiveness
+              if (analyserRef.current) {
+                const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+                analyserRef.current.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((p, c) => p + c, 0) / dataArray.length;
+                setVolume(average / 255);
               }
-              setVolume(Math.sqrt(sum / inputData.length));
 
               const pcm16 = new Int16Array(inputData.length);
               for (let i = 0; i < inputData.length; i++) {
@@ -109,21 +124,45 @@ export function useLiveAPI(systemInstruction: string) {
             
             if (message.serverContent?.turnComplete) {
               setIsProcessing(false);
-            }
-
-            const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-            
-            if (message.serverContent?.inputTranscription?.text) {
-              const text = message.serverContent.inputTranscription.text;
               setTranscripts(prev => {
                 const last = prev[prev.length - 1];
-                if (last && !last.isFinal) {
+                if (last && !last.isFinal && last.speaker === 'ai') {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { ...last, isFinal: true };
+                  return updated;
+                }
+                return prev;
+              });
+            }
+
+            if (message.serverContent?.outputTranscription?.text) {
+              const text = message.serverContent.outputTranscription.text;
+              setTranscripts(prev => {
+                const last = prev[prev.length - 1];
+                if (last && !last.isFinal && last.speaker === 'ai') {
                   const updated = [...prev];
                   updated[updated.length - 1] = { ...last, text: last.text + text };
                   return updated;
                 } else {
                   transcriptIdRef.current += 1;
-                  return [...prev, { id: transcriptIdRef.current, text, isFinal: false }];
+                  return [...prev, { id: transcriptIdRef.current, text, isFinal: false, speaker: 'ai' }];
+                }
+              });
+            }
+
+            const base64Audio = message.serverContent?.modelTurn?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            
+            if (message.serverContent?.inputTranscription?.text) {
+              const text = message.serverContent.inputTranscription.text;
+              setTranscripts(prev => {
+                const last = prev[prev.length - 1];
+                if (last && !last.isFinal && last.speaker === 'user') {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { ...last, text: last.text + text };
+                  return updated;
+                } else {
+                  transcriptIdRef.current += 1;
+                  return [...prev, { id: transcriptIdRef.current, text, isFinal: false, speaker: 'user' }];
                 }
               });
 
@@ -131,7 +170,7 @@ export function useLiveAPI(systemInstruction: string) {
               userTimeoutRef.current = setTimeout(() => {
                 setTranscripts(prev => {
                   const last = prev[prev.length - 1];
-                  if (last && !last.isFinal) {
+                  if (last && !last.isFinal && last.speaker === 'user') {
                     const updated = [...prev];
                     updated[updated.length - 1] = { ...last, isFinal: true };
                     return updated;
