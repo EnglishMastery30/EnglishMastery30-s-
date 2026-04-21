@@ -81,6 +81,7 @@ function AppContent() {
   const [swipeDirection, setSwipeDirection] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const handleWindowScroll = () => {
@@ -397,7 +398,7 @@ function AppContent() {
               <Menu className="w-6 h-6" />
             </button>
             <div 
-              className="flex items-center gap-2 cursor-pointer" 
+              className="flex items-center gap-2 cursor-pointer ml-1" 
               onClick={() => { setCurrentView('dashboard'); setSelectedDay(null); }}
             >
               <div className="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center">
@@ -407,7 +408,7 @@ function AppContent() {
             </div>
           </div>
           
-          <div className="flex-1 max-w-md hidden md:block">
+          <div className="flex-1 max-w-md hidden lg:block">
             <SearchBar 
               onNavigate={(view) => { setCurrentView(view as ViewState); setSelectedDay(null); }} 
               onSelectDay={setSelectedDay} 
@@ -448,7 +449,7 @@ function AppContent() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsDark(!isDark)}
-              className="hidden md:flex p-2 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="hidden lg:flex p-2 rounded-lg transition-colors text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               aria-label="Toggle dark mode"
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -471,21 +472,33 @@ function AppContent() {
 
       <div className="flex max-w-[1600px] mx-auto min-h-[calc(100vh-4rem)]">
         {/* Persistent Sidebar for Large Screens */}
-        <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-20 overflow-x-hidden">
-          <div className="p-4 space-y-1">
-            <div className="px-3 mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Menu</div>
+        <aside className={`hidden lg:flex flex-col transition-[width] duration-300 ease-in-out border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-20 overflow-x-hidden ${isSidebarCollapsed ? 'w-[72px]' : 'w-64'}`}>
+          <div className="p-4 space-y-1 relative">
+            <div className={`flex items-center mb-2 px-1 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+              {!isSidebarCollapsed && (
+                <span className="px-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 whitespace-nowrap">Menu</span>
+              )}
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
+                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+              </button>
+            </div>
             {navTabs.map((tab) => {
               const isActive = currentView === tab.id && !selectedDay;
               return (
                 <button
                   key={tab.id}
+                  title={isSidebarCollapsed ? tab.label : undefined}
                   onClick={() => { 
                     if (isLocked) return;
                     setCurrentView(tab.id as ViewState); 
                     setSelectedDay(null); 
                   }}
                   disabled={isLocked}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-4'} py-3 text-sm font-medium rounded-xl transition-all ${
                     isActive 
                       ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm' 
                       : isLocked 
@@ -493,9 +506,9 @@ function AppContent() {
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <tab.icon className={`w-5 h-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
-                  <span>{tab.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></div>}
+                  <tab.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
+                  {!isSidebarCollapsed && <span className="whitespace-nowrap">{tab.label}</span>}
+                  {!isSidebarCollapsed && isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0"></div>}
                 </button>
               );
             })}
@@ -504,33 +517,8 @@ function AppContent() {
 
         {/* Main Content Area */}
         <div className="flex-1 min-w-0">
-          {/* Scrollable Ribbon for Mobile/Tablet */}
-          <nav className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-20 flex items-center overflow-x-auto hide-scrollbar whitespace-nowrap p-2 scroll-smooth">
-            {navTabs.map((tab) => {
-              const isActive = currentView === tab.id && !selectedDay;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    if (isLocked) return;
-                    setCurrentView(tab.id as ViewState);
-                    setSelectedDay(null);
-                  }}
-                  disabled={isLocked}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-all shrink-0 mr-2 ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
 
-          <main className={`px-4 py-6 pb-24 lg:pb-8 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
+          <main className={`px-4 py-6 pb-24 md:pb-8 transition-all duration-300 ${isMobileMenuOpen ? 'blur-sm brightness-95' : ''}`}>
         {isLocked && (
           <div className="mb-8 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-6 rounded-2xl flex items-start gap-4 cursor-pointer" onClick={() => setCurrentView('profile')}>
             <div className="p-3 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl">
@@ -685,7 +673,7 @@ function AppContent() {
       </div>
 
       {/* Footer - Replaced with AI Tutorial Banner */}
-      <footer className="bg-indigo-900 text-white mt-auto py-12 relative overflow-hidden hidden md:block border-t border-indigo-800">
+      <footer className="bg-indigo-900 text-white mt-auto py-12 relative overflow-hidden hidden lg:block border-t border-indigo-800">
         <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/tech/1920/1080?blur=4')] mix-blend-overlay opacity-20 bg-cover bg-center"></div>
         <div className="absolute top-0 right-0 p-12 opacity-10">
           <Brain className="w-64 h-64 text-white" />
@@ -715,7 +703,7 @@ function AppContent() {
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation Bar - Visible on all but LG screens */}
+      {/* Mobile Bottom Navigation Bar - Visible on mobile only */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-around px-2 py-2">
           {[
@@ -751,7 +739,7 @@ function AppContent() {
         </div>
       </nav>
 
-      {/* Mobile Hamburger Menu Drawer - Visible on all but LG screens */}
+      {/* Mobile Hamburger Menu Drawer - Visible on mobile only */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
@@ -766,31 +754,41 @@ function AppContent() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-              className="fixed top-0 left-0 bottom-0 w-3/4 max-w-sm bg-white dark:bg-slate-900 z-50 shadow-2xl lg:hidden flex flex-col"
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              drag="x"
+              dragConstraints={{ left: -100, right: 0 }}
+              dragElastic={0.1}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -50 || info.velocity.x < -500) {
+                  setIsMobileMenuOpen(false);
+                }
+              }}
+              className="fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white dark:bg-slate-900 z-50 shadow-2xl lg:hidden flex flex-col"
             >
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                 <div 
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-3 cursor-pointer"
                   onClick={() => {
                     setCurrentView('dashboard');
                     setSelectedDay(null);
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  <div className="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200 dark:shadow-none">
                     <Mic className="w-5 h-5 text-white" />
                   </div>
-                  <h1 className="font-bold text-lg tracking-tight dark:text-white">Menu</h1>
+                  <h1 className="font-bold text-xl tracking-tight dark:text-white">English Mastery</h1>
                 </div>
                 <button 
                   onClick={() => setIsMobileMenuOpen(false)} 
-                  className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  className="p-2.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full shadow-sm border border-slate-100 dark:border-slate-700 transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+              
+              <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <div className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-2">Menu</div>
                 {navTabs.map(tab => {
                   const isActive = currentView === tab.id && !selectedDay;
                   return (
@@ -803,19 +801,24 @@ function AppContent() {
                         setIsMobileMenuOpen(false);
                       }}
                       disabled={isLocked}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                      className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all ${
                         isActive 
-                          ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium' 
+                          ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm' 
                           : isLocked 
                             ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
                       }`}
                     >
-                      <tab.icon className="w-5 h-5" />
-                      <span>{tab.label}</span>
+                      <tab.icon className={`w-5 h-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                      <span className="text-base">{tab.label}</span>
+                      {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></div>}
                     </button>
                   )
                 })}
+                
+                <div className="my-6 border-t border-slate-100 dark:border-slate-800/50"></div>
+                <div className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 ml-2">Account</div>
+                
                 <button
                   onClick={() => {
                     if (isLocked) return;
@@ -824,28 +827,34 @@ function AppContent() {
                     setIsMobileMenuOpen(false);
                   }}
                   disabled={isLocked}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all ${
                     currentView === 'profile' 
-                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium' 
+                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm' 
                       : isLocked 
                         ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                 >
-                  <User className="w-5 h-5" />
-                  <span>Profile</span>
+                  <User className={`w-5 h-5 ${currentView === 'profile' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                  <span className="text-base">Profile</span>
+                  {currentView === 'profile' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400"></div>}
                 </button>
               </div>
-              <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                 <button
                   onClick={() => {
                     setIsDark(!isDark);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm"
                 >
-                  {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                  <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  <div className="flex items-center gap-3">
+                    {isDark ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
+                    <span className="font-medium">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  </div>
+                  <div className={`w-10 h-6 shrink-0 rounded-full transition-colors flex items-center px-1 ${isDark ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
                 </button>
               </div>
             </motion.div>
@@ -860,7 +869,7 @@ function AppContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-[4.5rem] md:bottom-6 right-4 md:right-6 z-50 p-2.5 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+            className="fixed bottom-40 lg:bottom-24 right-4 lg:right-6 z-50 p-2.5 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
             aria-label="Scroll to top"
           >
             <ArrowUp className="w-5 h-5" />

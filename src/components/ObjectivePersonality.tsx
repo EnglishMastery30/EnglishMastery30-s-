@@ -338,11 +338,11 @@ export function ObjectivePersonality({ section }: { section?: string }) {
   const renderContent = () => {
     switch (section) {
       case 'man':
-        return <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://picsum.photos/seed/man_portrait/600/800" accentColor="sky" />;
+        return <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600&h=800" accentColor="sky" />;
       case 'woman':
-        return <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://picsum.photos/seed/woman_portrait/600/800" accentColor="rose" />;
+        return <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600&h=800" accentColor="rose" />;
       case 'child':
-        return <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://picsum.photos/seed/happy_child/600/800" accentColor="emerald" />;
+        return <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://images.unsplash.com/photo-1502086223501-7ea244b05ec6?auto=format&fit=crop&q=80&w=600&h=800" accentColor="emerald" />;
       case 'trait':
         return <Section title="Character Trait" icon={<Heart className="w-8 h-8 text-orange-500" />} data={CHARACTER_ADJECTIVES} image="https://picsum.photos/seed/character/600/800" accentColor="orange" />;
       case 'lips_voice':
@@ -368,9 +368,9 @@ export function ObjectivePersonality({ section }: { section?: string }) {
       default:
         return (
           <div className="space-y-24">
-            <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://picsum.photos/seed/man_portrait/600/800" accentColor="sky" />
-            <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://picsum.photos/seed/woman_portrait/600/800" accentColor="rose" />
-            <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://picsum.photos/seed/happy_child/600/800" accentColor="emerald" />
+            <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600&h=800" accentColor="sky" />
+            <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600&h=800" accentColor="rose" />
+            <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://images.unsplash.com/photo-1502086223501-7ea244b05ec6?auto=format&fit=crop&q=80&w=600&h=800" accentColor="emerald" />
             <Section title="Character Trait" icon={<Heart className="w-8 h-8 text-orange-500" />} data={CHARACTER_ADJECTIVES} image="https://picsum.photos/seed/character/600/800" accentColor="orange" />
             <Section title="Lips & Voice" icon={<Mic className="w-8 h-8 text-violet-500" />} data={[...LIPS_ADJECTIVES, ...VOICE_ADJECTIVES]} image="https://picsum.photos/seed/voice_lips/600/800" accentColor="violet" />
             <Section title="Eyes & Vision" icon={<Eye className="w-8 h-8 text-cyan-500" />} data={EYES_ADJECTIVES} image="https://picsum.photos/seed/eyes/600/800" accentColor="cyan" />

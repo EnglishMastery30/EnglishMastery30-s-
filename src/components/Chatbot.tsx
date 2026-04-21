@@ -199,10 +199,10 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
       <button
         onClick={() => { if (!isLocked) setIsOpen(true); }}
         disabled={isLocked}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform z-40 ${isOpen ? 'scale-0' : 'scale-100'} ${isLocked ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105'}`}
+        className={`fixed bottom-24 lg:bottom-6 right-4 lg:right-6 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-transform z-40 ${isOpen ? 'scale-0' : 'scale-100'} ${isLocked ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105'}`}
         aria-label="Open AI Chatbot"
       >
-        {isLocked ? <Lock className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        {isLocked ? <Lock className="w-5 h-5" /> : <MessageSquare className="w-5 h-5" />}
       </button>
 
       {/* Chat Window */}
@@ -212,7 +212,7 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className={`fixed bottom-6 right-6 ${viewingAttachment ? 'w-[700px] sm:w-[800px]' : 'w-[340px] sm:w-96'} h-[500px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-row z-50 overflow-hidden transition-all duration-300`}
+            className={`fixed bottom-24 lg:bottom-6 right-4 lg:right-6 ${viewingAttachment ? 'w-[700px] sm:w-[800px]' : 'w-[340px] sm:w-96'} h-[500px] max-h-[75vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-row z-50 overflow-hidden transition-all duration-300`}
           >
             {/* Side Attachment Viewer */}
             {viewingAttachment && (

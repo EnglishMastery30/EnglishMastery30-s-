@@ -323,57 +323,9 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
 
         {/* Right Column: Widgets & AI Suggestions */}
         <div className="space-y-6">
-          <div className="block md:hidden">
-            <div 
-              className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-4 -mx-4 px-4 gap-4"
-              onScroll={(e) => {
-                const target = e.target as HTMLDivElement;
-                const slideWidth = target.offsetWidth;
-                const newSlide = Math.round(target.scrollLeft / slideWidth);
-                setActiveSlide(newSlide);
-              }}
-            >
-              <div className="snap-center shrink-0 w-[calc(100vw-2rem)]">
-                <QuickTranslate />
-              </div>
-              <div className="snap-center shrink-0 w-[calc(100vw-2rem)]">
-                {/* AI Suggestions Mobile */}
-                <div className="bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 p-6 rounded-2xl h-full">
-                  <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2 mb-4">
-                    <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> AI Suggestions
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm mb-1">Pronunciation Focus</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Work on the "th" sound in words like "think" and "though".
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm mb-1">Vocabulary Expansion</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Try using "I would prefer" instead of "I want" for more polite requests.
-                      </p>
-                    </div>
-                    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-indigo-100/50 dark:border-indigo-500/10">
-                      <h4 className="font-semibold text-slate-900 dark:text-white text-sm mb-1">Grammar Tip</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Remember to use "any" in negative sentences instead of "some".
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center gap-2 mt-2">
-              <div className={`w-2 h-2 rounded-full transition-colors ${activeSlide === 0 ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-              <div className={`w-2 h-2 rounded-full transition-colors ${activeSlide === 1 ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-            </div>
-          </div>
-
-          <div className="hidden md:block space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-24">
             <QuickTranslate isLocked={isLocked} />
-            {/* AI Suggestions Desktop */}
+            {/* AI Suggestions */}
             <div className="bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 p-6 rounded-2xl">
               <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2 mb-4">
                 <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> AI Suggestions
