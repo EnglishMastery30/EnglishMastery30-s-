@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Key, ArrowRight, Github, Smartphone, Facebook, Instagram, Ghost } from 'lucide-react';
+import { Mail, Key, ArrowRight, Github, Smartphone, Facebook, Instagram, Ghost, Shield, FileText } from 'lucide-react';
 import { auth } from '../firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, signInWithEmailAndPassword, sendPasswordResetEmail, createUserWithEmailAndPassword, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
 
@@ -33,35 +33,50 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     }
   }, []);
 
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePhone = (phone: string) => {
+    // Basic international format validation
+    return /^\+[1-9]\d{1,14}$/.test(phone.replace(/\s+/g, ''));
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
+    
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!email || !password) {
-        throw new Error('Please enter both email and password.');
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error('Please enter a valid email address.');
-      }
       await signInWithEmailAndPassword(auth, email, password);
       onLoginSuccess();
     } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password login is not enabled. Please enable it in the Firebase Console under Authentication > Sign-in method.');
-      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        // Auto-signup if user doesn't exist for demo purposes, or just show error
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        // Auto-signup if user doesn't exist for demo/easier onboarding
         try {
           await createUserWithEmailAndPassword(auth, email, password);
           onLoginSuccess();
         } catch (signupErr: any) {
           if (signupErr.code === 'auth/email-already-in-use') {
-            setError('Invalid email or password. Please try again or reset your password.');
-          } else if (signupErr.code === 'auth/operation-not-allowed') {
-            setError('Email/Password login is not enabled. Please enable it in the Firebase Console under Authentication > Sign-in method.');
+            setError('Invalid password for this account.');
+          } else if (signupErr.code === 'auth/weak-password') {
+            setError('Password is too weak.');
           } else {
-            setError(signupErr.message || 'Failed to sign in or create account.');
+            setError(signupErr.message || 'Failed to sign in.');
           }
         }
       } else {
@@ -77,25 +92,19 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     e.preventDefault();
     setError('');
     setMessage('');
+    
+    if (!email || !validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!email) {
-        throw new Error('Please enter your email address first.');
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error('Please enter a valid email address.');
-      }
       await sendPasswordResetEmail(auth, email);
       setMessage('Password reset email sent! Check your inbox.');
       setStep('input');
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') {
-        setError('No account found with this email address.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password login is not enabled. Please enable it in the Firebase Console under Authentication > Sign-in method.');
-      } else {
-        setError(err.message || 'Failed to send password reset email.');
-      }
+      setError(err.message || 'Failed to send password reset email.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -106,17 +115,32 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     e.preventDefault();
     setError('');
     setMessage('');
+
+    if (!phone) {
+      setError('Please enter a phone number.');
+      return;
+    }
+
+    // Try to format nicely if it lacks +
+    let formattedPhone = phone.trim();
+    if (!formattedPhone.startsWith('+')) {
+       setError('Please enter your phone number with country code (e.g., +15550000000)');
+       return;
+    }
+
+    if (!validatePhone(formattedPhone)) {
+      setError('Please enter a valid phone number in international format.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!phone) {
-        throw new Error('Please enter a valid phone number.');
-      }
       const appVerifier = window.recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(confirmation);
       setStep('verify');
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
+      setError(err.message || 'Failed to send OTP. Please ensure your number is correct.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -127,16 +151,18 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     e.preventDefault();
     if (!confirmationResult) return;
     setError('');
-    setMessage('');
+    
+    if (!otp || otp.length < 6) {
+      setError('Please enter a valid 6-digit OTP.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!otp) {
-        throw new Error('Please enter the OTP.');
-      }
       await confirmationResult.confirm(otp);
       onLoginSuccess();
     } catch (err: any) {
-      setError(err.message || 'Invalid OTP. Please try again.');
+      setError('Invalid OTP. Please check and try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -145,18 +171,13 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
   const handleGoogleLogin = async () => {
     setError('');
-    setMessage('');
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       onLoginSuccess();
     } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed') {
-        setError('Google login is not enabled. Please enable it in the Firebase Console under Authentication > Sign-in method.');
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        // User closed the popup, no need to show a scary error
-      } else {
+      if (err.code !== 'auth/popup-closed-by-user') {
         setError(err.message || 'Failed to sign in with Google.');
       }
       console.error(err);
@@ -167,18 +188,13 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
   const handleFacebookLogin = async () => {
     setError('');
-    setMessage('');
     setLoading(true);
     try {
       const provider = new FacebookAuthProvider();
       await signInWithPopup(auth, provider);
       onLoginSuccess();
     } catch (err: any) {
-      if (err.code === 'auth/operation-not-allowed') {
-        setError('Facebook login is not enabled. Please enable it in the Firebase Console under Authentication > Sign-in method.');
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        // User closed the popup
-      } else {
+      if (err.code !== 'auth/popup-closed-by-user') {
         setError(err.message || 'Failed to sign in with Facebook.');
       }
       console.error(err);
@@ -403,6 +419,32 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             </button>
           </form>
         )}
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-500">
+            By continuing, you agree to our{' '}
+            <button 
+              onClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'terms' });
+                window.dispatchEvent(event);
+              }}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5"
+            >
+              <FileText className="w-3 h-3" />
+              Terms of Service
+            </button>
+            {' '}and{' '}
+            <button 
+               onClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'privacy' });
+                window.dispatchEvent(event);
+              }}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-0.5"
+            >
+              <Shield className="w-3 h-3" />
+              Privacy Policy
+            </button>
+          </p>
+        </div>
         <div id="recaptcha-container"></div>
       </motion.div>
     </div>

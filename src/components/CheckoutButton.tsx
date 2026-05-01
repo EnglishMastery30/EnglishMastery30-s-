@@ -22,38 +22,63 @@ export function CheckoutButton({
     setError(null);
 
     try {
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await fetch('/api/create-razorpay-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          amount: amount / 100, // Converting cents/paise back to base unit for the API
           productName,
-          amount,
         }),
       });
 
-      const data = await response.json();
+      const orderData = await response.json();
 
       if (!response.ok) {
-        // If Stripe is not configured, mock the success for prototype purposes
-        if (data.message && data.message.includes('STRIPE_SECRET_KEY')) {
-          console.log('Stripe not configured, mocking successful upgrade');
-          if (onSuccess) onSuccess();
-          return;
-        }
-        throw new Error(data.message || 'Something went wrong');
+        throw new Error(orderData.error || 'Failed to create order');
       }
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
+      // Check for Razorpay in window
+      if (!(window as any).Razorpay) {
+        // Load Razorpay script if not present
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        
+        await new Promise((resolve) => {
+          script.onload = resolve;
+        });
       }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "English Master",
+        description: productName,
+        image: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=100&h=100&fit=crop",
+        order_id: orderData.id,
+        handler: function (response: any) {
+          console.log("Payment successful:", response);
+          if (onSuccess) onSuccess();
+        },
+        prefill: {
+          name: "User",
+          email: "user@example.com",
+        },
+        theme: {
+          color: "#4f46e5",
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
     } catch (err: any) {
       console.error('Checkout error:', err);
-      // Fallback mock for prototype if network fails
-      if (onSuccess) onSuccess();
+      setError(err.message || 'Something went wrong');
+      // Fallback mock check if needed, but safer to show error
     } finally {
       setIsLoading(false);
     }

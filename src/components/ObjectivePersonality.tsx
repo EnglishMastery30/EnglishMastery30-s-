@@ -1,268 +1,346 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Languages, Star, Shield, AlertTriangle, User, Users, Baby, Shirt, Heart, Mic, Eye, MapPin, Smile, Utensils, Scissors, Laugh, Ear } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Languages, Star, Shield, AlertTriangle, User, Users, Baby, Shirt, Heart, Mic, Eye, MapPin, Smile, Utensils, Scissors, Laugh, Ear, FileText, Volume2, Scale } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useCredits } from '../contexts/CreditsContext';
+import { GoogleGenAI } from '@google/genai';
+import { generateContentWithFallback } from '../utils/aiFallback';
+import { WordCard } from './WordCard';
 
 interface Adjective {
   word: string;
-  telugu: string;
   category: 'positive' | 'neutral' | 'negative';
+  definition?: string;
+}
+
+interface SectionData {
+  id: string;
+  title: string;
+  definition: string;
+  icon: React.ReactNode;
+  data: Adjective[];
+  accentColor: string;
 }
 
 const MAN_PERSONALITY: Adjective[] = [
-  { word: 'Handsome', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Clean cut', telugu: 'శుభ్రమైన', category: 'positive' },
-  { word: 'Striking', telugu: 'కొట్టొచ్చినట్టు', category: 'positive' },
-  { word: 'Arresting', telugu: 'కట్టి పడేసే', category: 'positive' },
-  { word: 'Appealing', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Sculptured', telugu: 'శిల్పం చెక్కినట్లు', category: 'positive' },
-  { word: 'Well built', telugu: 'చక్కని ఆకృతికలిగిన', category: 'positive' },
-  { word: 'Rugged', telugu: 'దృఢమైన', category: 'positive' },
-  { word: 'Ambitious', telugu: 'దృఢ చిత్తము కలిగిన', category: 'positive' },
-  { word: 'Rough', telugu: 'సౌమ్యతలేని', category: 'neutral' },
-  { word: 'Excellent', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Silent', telugu: 'మౌనంగా', category: 'neutral' },
-  { word: 'Inviting', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Engaging', telugu: 'మనసుకు నచ్చే', category: 'positive' },
-  { word: 'Innocent', telugu: 'అమాయక', category: 'positive' },
-  { word: 'Fearless', telugu: 'భయంలేని', category: 'positive' },
-  { word: 'Likable', telugu: 'ఇష్టపడే', category: 'positive' },
-  { word: 'Selective', telugu: 'ప్రత్యేకమైన', category: 'neutral' },
-  { word: 'Brave', telugu: 'ధైర్యమైన', category: 'positive' },
-  { word: 'Catty', telugu: 'పిరికి', category: 'negative' },
-  { word: 'Cheeky', telugu: 'నిండైన చెంపలు కలిగిన', category: 'neutral' },
-  { word: 'Bad tempered', telugu: 'చెడ్డ స్వభావం కల', category: 'negative' },
-  { word: 'Big headed', telugu: 'తలబిరుసు', category: 'negative' },
-  { word: 'Arrogant', telugu: 'గర్వంకలిగిన', category: 'negative' },
-  { word: 'Bossy', telugu: 'పెత్తనం చలాయించే', category: 'negative' },
+  { word: 'Handsome', category: 'positive' },
+  { word: 'Clean cut', category: 'positive' },
+  { word: 'Striking', category: 'positive' },
+  { word: 'Arresting', category: 'positive' },
+  { word: 'Appealing', category: 'positive' },
+  { word: 'Sculptured', category: 'positive' },
+  { word: 'Well built', category: 'positive' },
+  { word: 'Rugged', category: 'positive' },
+  { word: 'Ambitious', category: 'positive' },
+  { word: 'Rough', category: 'neutral' },
+  { word: 'Excellent', category: 'positive' },
+  { word: 'Silent', category: 'neutral' },
+  { word: 'Inviting', category: 'positive' },
+  { word: 'Engaging', category: 'positive' },
+  { word: 'Innocent', category: 'positive' },
+  { word: 'Fearless', category: 'positive' },
+  { word: 'Likable', category: 'positive' },
+  { word: 'Selective', category: 'neutral' },
+  { word: 'Brave', category: 'positive' },
+  { word: 'Catty', category: 'negative' },
+  { word: 'Cheeky', category: 'neutral' },
+  { word: 'Bad tempered', category: 'negative' },
+  { word: 'Big headed', category: 'negative' },
+  { word: 'Arrogant', category: 'negative' },
+  { word: 'Bossy', category: 'negative' },
 ];
 
 const WOMAN_PERSONALITY: Adjective[] = [
-  { word: 'Gorgeous', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Glamorous', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Amazing', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Awesome', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Effeminate', telugu: 'స్త్రీపురుష', category: 'neutral' },
-  { word: 'Smart-attractive', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Homely', telugu: 'సాధారణమైన', category: 'neutral' },
-  { word: 'Beautiful', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Melting', telugu: 'కరిగించే', category: 'positive' },
-  { word: 'Alluring', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Dazzling', telugu: 'మిరుమిట్లు గొలిపే', category: 'positive' },
-  { word: 'Gracious', telugu: 'దయగల', category: 'positive' },
-  { word: 'Seductive', telugu: 'దురుద్దేశం కలిగించే', category: 'neutral' },
-  { word: 'Romantic-charming', telugu: 'శృంగార-మనోహరమైన', category: 'positive' },
-  { word: 'Cherubic', telugu: 'పసితనం', category: 'positive' },
-  { word: 'Haunting', telugu: 'వెంటాడే', category: 'neutral' },
-  { word: 'Irresistible', telugu: 'నిగ్రహించుకోలేని', category: 'positive' },
-  { word: 'Staggering', telugu: 'దిమ్మెతిరిగే', category: 'positive' },
-  { word: 'Bewitching', telugu: 'మంత్రముగ్ధులను చేసే', category: 'positive' },
-  { word: 'Curvaceous', telugu: 'ఒంపులు తిరిగిన', category: 'positive' },
-  { word: 'Mesmerizing', telugu: 'మంత్రముగ్ధులను చేసే', category: 'positive' },
-  { word: 'Drop-dead', telugu: 'అత్యంత అందమైన', category: 'positive' },
-  { word: 'Angelic', telugu: 'దేవదూతలాంటి', category: 'positive' },
-  { word: 'Comely', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Radiant', telugu: 'ప్రకాశించే', category: 'positive' },
-  { word: 'Ravishing', telugu: 'విపరీతమైన అందమైన', category: 'positive' },
-  { word: 'Stunning', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Elegant', telugu: 'సొగసైన', category: 'positive' },
+  { word: 'Gorgeous', category: 'positive' },
+  { word: 'Glamorous', category: 'positive' },
+  { word: 'Amazing', category: 'positive' },
+  { word: 'Awesome', category: 'positive' },
+  { word: 'Effeminate', category: 'neutral' },
+  { word: 'Smart-attractive', category: 'positive' },
+  { word: 'Homely', category: 'neutral' },
+  { word: 'Beautiful', category: 'positive' },
+  { word: 'Melting', category: 'positive' },
+  { word: 'Alluring', category: 'positive' },
+  { word: 'Dazzling', category: 'positive' },
+  { word: 'Gracious', category: 'positive' },
+  { word: 'Seductive', category: 'neutral' },
+  { word: 'Romantic-charming', category: 'positive' },
+  { word: 'Cherubic', category: 'positive' },
+  { word: 'Haunting', category: 'neutral' },
+  { word: 'Irresistible', category: 'positive' },
+  { word: 'Staggering', category: 'positive' },
+  { word: 'Bewitching', category: 'positive' },
+  { word: 'Curvaceous', category: 'positive' },
+  { word: 'Mesmerizing', category: 'positive' },
+  { word: 'Drop-dead', category: 'positive' },
+  { word: 'Angelic', category: 'positive' },
+  { word: 'Comely', category: 'positive' },
+  { word: 'Radiant', category: 'positive' },
+  { word: 'Ravishing', category: 'positive' },
+  { word: 'Stunning', category: 'positive' },
+  { word: 'Elegant', category: 'positive' },
 ];
 
 const CHILD_PERSONALITY: Adjective[] = [
-  { word: 'Adorable', telugu: 'పూజ్యమైన', category: 'positive' },
-  { word: 'Lovely', telugu: 'సుందరమైన', category: 'positive' },
-  { word: 'Bubbly', telugu: 'బబ్లీ', category: 'positive' },
-  { word: 'Bonny', telugu: 'ముద్దుగా ఉన్న', category: 'positive' },
-  { word: 'Cute', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Darling', telugu: 'ప్రియమైన', category: 'positive' },
-  { word: 'Pretty', telugu: 'చక్కని', category: 'positive' },
-  { word: 'Dainty', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Cuddly', telugu: 'ముద్దుగా', category: 'positive' },
-  { word: 'Loveable', telugu: 'ప్రేమించదగినది', category: 'positive' },
-  { word: 'Sweet', telugu: 'చూడ చక్కని', category: 'positive' },
-  { word: 'Little', telugu: 'చిన్నని', category: 'neutral' },
-  { word: 'Precious', telugu: 'విలువైన', category: 'positive' },
-  { word: 'Dashing', telugu: 'డాషింగ్', category: 'positive' },
-  { word: 'Teensy', telugu: 'యుక్త', category: 'neutral' },
+  { word: 'Adorable', category: 'positive' },
+  { word: 'Lovely', category: 'positive' },
+  { word: 'Bubbly', category: 'positive' },
+  { word: 'Bonny', category: 'positive' },
+  { word: 'Cute', category: 'positive' },
+  { word: 'Darling', category: 'positive' },
+  { word: 'Pretty', category: 'positive' },
+  { word: 'Dainty', category: 'positive' },
+  { word: 'Cuddly', category: 'positive' },
+  { word: 'Loveable', category: 'positive' },
+  { word: 'Sweet', category: 'positive' },
+  { word: 'Little', category: 'neutral' },
+  { word: 'Precious', category: 'positive' },
+  { word: 'Dashing', category: 'positive' },
+  { word: 'Teensy', category: 'neutral' },
 ];
 
 const DRESS_ADJECTIVES: Adjective[] = [
-  { word: 'Elegant', telugu: 'సొగసైన', category: 'positive' },
-  { word: 'Glamorous', telugu: 'ఆకర్షణీయమైన', category: 'positive' },
-  { word: 'Gorgeous', telugu: 'బ్రహ్మాండమైన', category: 'positive' },
-  { word: 'Presentable', telugu: 'ప్రదర్శించదగిన', category: 'positive' },
-  { word: 'Colorful', telugu: 'రంగురంగుల', category: 'positive' },
-  { word: 'Casual wear', telugu: 'సాధారణ దుస్తులు', category: 'neutral' },
-  { word: 'Formal wear', telugu: 'అధికారిక దుస్తులు', category: 'neutral' },
-  { word: 'Expensive clothes', telugu: 'ఖరీదైన బట్టలు', category: 'neutral' },
-  { word: 'Cheap clothes', telugu: 'చౌక బట్టలు', category: 'neutral' },
-  { word: 'Shabby clothes', telugu: 'చిరిగిన బట్టలు', category: 'negative' },
-  { word: 'Handmade clothes', telugu: 'చేతితో తయారు చేసే', category: 'positive' },
-  { word: 'Designer clothes', telugu: 'డిజైనర్ దుస్తులు', category: 'positive' },
-  { word: 'Readymade clothes', telugu: 'రెడీమేడ్ బట్టలు', category: 'neutral' },
-  { word: 'Cotton clothes', telugu: 'పత్తి బట్టలు', category: 'neutral' },
-  { word: 'Linen clothes', telugu: 'నార బట్టలు', category: 'neutral' },
-  { word: 'Silk clothes', telugu: 'పట్టు బట్టలు', category: 'positive' },
-  { word: 'Synthetic clothes', telugu: 'సింథటిక్ బట్టలు', category: 'neutral' },
-  { word: 'Nylon clothes', telugu: 'నైలాన్ బట్టలు', category: 'neutral' },
-  { word: 'Polyester clothes', telugu: 'పాలిస్టర్ బట్టలు', category: 'neutral' },
-  { word: 'Denim clothes', telugu: 'డెనిమ్ బట్టలు', category: 'neutral' },
-  { word: 'Leather clothes', telugu: 'తోలు బట్టలు', category: 'neutral' },
+  { word: 'Elegant', category: 'positive' },
+  { word: 'Glamorous', category: 'positive' },
+  { word: 'Gorgeous', category: 'positive' },
+  { word: 'Presentable', category: 'positive' },
+  { word: 'Colorful', category: 'positive' },
+  { word: 'Casual wear', category: 'neutral' },
+  { word: 'Formal wear', category: 'neutral' },
+  { word: 'Expensive clothes', category: 'neutral' },
+  { word: 'Cheap clothes', category: 'neutral' },
+  { word: 'Shabby clothes', category: 'negative' },
+  { word: 'Handmade clothes', category: 'positive' },
+  { word: 'Designer clothes', category: 'positive' },
+  { word: 'Readymade clothes', category: 'neutral' },
+  { word: 'Cotton clothes', category: 'neutral' },
+  { word: 'Linen clothes', category: 'neutral' },
+  { word: 'Silk clothes', category: 'positive' },
+  { word: 'Synthetic clothes', category: 'neutral' },
+  { word: 'Nylon clothes', category: 'neutral' },
+  { word: 'Polyester clothes', category: 'neutral' },
+  { word: 'Denim clothes', category: 'neutral' },
+  { word: 'Leather clothes', category: 'neutral' },
 ];
 
 const CHARACTER_ADJECTIVES: Adjective[] = [
-  { word: 'Active', telugu: 'చురుకైన', category: 'positive' },
-  { word: 'Aggressive', telugu: 'దూకుడు స్వభావం కలిగిన', category: 'negative' },
-  { word: 'Ambitious', telugu: 'ఆశావాహ దృక్పథం కలిగిన', category: 'positive' },
-  { word: 'Arrogant', telugu: 'గర్వం కలిగిన', category: 'negative' },
-  { word: 'Assertive', telugu: 'దృఢమైన', category: 'positive' },
-  { word: 'Creative', telugu: 'సృజనాత్మక', category: 'positive' },
-  { word: 'Pleasant', telugu: 'ఆహ్లాదకరమైన', category: 'positive' },
-  { word: 'Good tempered', telugu: 'మంచి స్వభావం కల', category: 'positive' },
-  { word: 'Easy going', telugu: 'పట్టించుకోని', category: 'positive' },
-  { word: 'Friendly', telugu: 'స్నేహపూర్వక', category: 'positive' },
-  { word: 'Independent', telugu: 'స్వతంత్రమైన', category: 'positive' },
-  { word: 'Matured', telugu: 'పరిపక్వమైన', category: 'positive' },
-  { word: 'Reliable', telugu: 'విశ్వసనీయమైన', category: 'positive' },
-  { word: 'Honest', telugu: 'నిజాయితీ', category: 'positive' },
-  { word: 'Hard-working', telugu: 'కష్టపడి పనిచేసే', category: 'positive' },
-  { word: 'Energetic', telugu: 'శక్తివంతమైన', category: 'positive' },
-  { word: 'Lazy', telugu: 'సోమరితనం కలిగిన', category: 'negative' },
-  { word: 'Organized', telugu: 'నిర్వాహక', category: 'positive' },
-  { word: 'Self confident', telugu: 'ఆత్మవిశ్వాసం కలిగిన', category: 'positive' },
-  { word: 'Generous', telugu: 'ఉదారమైన', category: 'positive' },
+  { word: 'Active', category: 'positive' },
+  { word: 'Aggressive', category: 'negative' },
+  { word: 'Ambitious', category: 'positive' },
+  { word: 'Arrogant', category: 'negative' },
+  { word: 'Assertive', category: 'positive' },
+  { word: 'Creative', category: 'positive' },
+  { word: 'Pleasant', category: 'positive' },
+  { word: 'Good tempered', category: 'positive' },
+  { word: 'Easy going', category: 'positive' },
+  { word: 'Friendly', category: 'positive' },
+  { word: 'Independent', category: 'positive' },
+  { word: 'Matured', category: 'positive' },
+  { word: 'Reliable', category: 'positive' },
+  { word: 'Honest', category: 'positive' },
+  { word: 'Hard-working', category: 'positive' },
+  { word: 'Energetic', category: 'positive' },
+  { word: 'Lazy', category: 'negative' },
+  { word: 'Organized', category: 'positive' },
+  { word: 'Self confident', category: 'positive' },
+  { word: 'Generous', category: 'positive' },
+  { word: 'Humble', category: 'positive' },
+  { word: 'Patient', category: 'positive' },
+  { word: 'Observant', category: 'positive' },
+  { word: 'Optimistic', category: 'positive' },
+  { word: 'Resourceful', category: 'positive' },
+  { word: 'Persuasive', category: 'positive' },
+  { word: 'Witty', category: 'positive' },
+  { word: 'Charismatic', category: 'positive' },
+  { word: 'Sophisticated', category: 'positive' },
+  { word: 'Introverted', category: 'neutral' },
+  { word: 'Extroverted', category: 'neutral' },
 ];
 
 const LIPS_ADJECTIVES: Adjective[] = [
-  { word: 'Flat lips', telugu: 'చదునైన పెదవులు', category: 'neutral' },
-  { word: 'Uneven lips', telugu: 'వంగిపోయిన పెదవులు', category: 'neutral' },
-  { word: 'Droopy lips', telugu: 'ముసిముసిగా నవ్వుతున్న పెదవులు', category: 'positive' },
-  { word: 'Thick lips', telugu: 'మందపాటి పెదవులు', category: 'neutral' },
-  { word: 'Thin lips', telugu: 'సన్నని పెదవులు', category: 'neutral' },
-  { word: 'Wide lips', telugu: 'విశాలమైన పెదవులు', category: 'neutral' },
-  { word: 'Full lips', telugu: 'నిండు పెదవులు', category: 'positive' },
-  { word: 'Round lips', telugu: 'గుండ్రటి పెదవులు', category: 'neutral' },
+  { word: 'Flat lips', category: 'neutral' },
+  { word: 'Uneven lips', category: 'neutral' },
+  { word: 'Droopy lips', category: 'positive' },
+  { word: 'Thick lips', category: 'neutral' },
+  { word: 'Thin lips', category: 'neutral' },
+  { word: 'Wide lips', category: 'neutral' },
+  { word: 'Full lips', category: 'positive' },
+  { word: 'Round lips', category: 'neutral' },
+  { word: 'Rosebud lips', category: 'positive' },
+  { word: 'Luscious', category: 'positive' },
+  { word: 'Crimson', category: 'neutral' },
+  { word: 'Chapped', category: 'negative' },
 ];
 
 const VOICE_ADJECTIVES: Adjective[] = [
-  { word: 'Sweet', telugu: 'తీయని', category: 'positive' },
-  { word: 'Husky', telugu: 'ముక్కులిగిన', category: 'neutral' },
-  { word: 'Melodious', telugu: 'మధురమైన', category: 'positive' },
-  { word: 'Mellifluous', telugu: 'మధురమైన', category: 'positive' },
-  { word: 'Appealing', telugu: 'వివ సొప్పిన', category: 'positive' },
-  { word: 'Breathy', telugu: 'నెమ్మదైన', category: 'neutral' },
-  { word: 'Croaky', telugu: 'అలసి పోయిన స్వరము', category: 'neutral' },
-  { word: 'Fruity', telugu: 'లోతైన', category: 'neutral' },
-  { word: 'Honeyed', telugu: 'తీయని', category: 'positive' },
-  { word: 'Silvery', telugu: 'తలుక్కమనే', category: 'positive' },
-  { word: 'Sing song', telugu: 'సుస్వరమైన', category: 'positive' },
-  { word: 'Smoky', telugu: 'రసిక', category: 'neutral' },
+  { word: 'Sweet', category: 'positive' },
+  { word: 'Husky', category: 'neutral' },
+  { word: 'Melodious', category: 'positive' },
+  { word: 'Mellifluous', category: 'positive' },
+  { word: 'Appealing', category: 'positive' },
+  { word: 'Breathy', category: 'neutral' },
+  { word: 'Croaky', category: 'neutral' },
+  { word: 'Fruity', category: 'neutral' },
+  { word: 'Honeyed', category: 'positive' },
+  { word: 'Silvery', category: 'positive' },
+  { word: 'Sing song', category: 'positive' },
+  { word: 'Smoky', category: 'neutral' },
+  { word: 'Baritone', category: 'neutral' },
+  { word: 'Soft-spoken', category: 'positive' },
+  { word: 'Monotonous', category: 'negative' },
+  { word: 'Gravelly', category: 'neutral' },
+  { word: 'Dulcet', category: 'positive' },
 ];
 
 const EYES_ADJECTIVES: Adjective[] = [
-  { word: 'Dancing eyes', telugu: 'నృత్యం ఆడే కళ్ళు', category: 'positive' },
-  { word: 'Flashing eyes', telugu: 'మెరుస్తున్న కళ్ళు', category: 'positive' },
-  { word: 'Glittering eyes', telugu: 'మెరుస్తున్న కళ్ళు', category: 'positive' },
-  { word: 'Sparkling eyes', telugu: 'మెరిసే కళ్ళు', category: 'positive' },
-  { word: 'Twinkling eyes', telugu: 'మెరిసే కళ్ళు', category: 'positive' },
-  { word: 'Dark eyes', telugu: 'నల్ల కళ్ళు', category: 'neutral' },
-  { word: 'Brown eyes', telugu: 'గోధుమ కళ్ళు', category: 'neutral' },
-  { word: 'Blue eyes', telugu: 'నీలి కళ్ళు', category: 'neutral' },
-  { word: 'Light blue eyes', telugu: 'లేత నీలం కళ్ళు', category: 'neutral' },
-  { word: 'Bright eyes', telugu: 'ప్రకాశవంతమైన కళ్ళు', category: 'positive' },
-  { word: 'Expressive eyes', telugu: 'వ్యక్తీకరణ కళ్ళు', category: 'positive' },
-  { word: 'Long lashed eyes', telugu: 'పొడవైన కనురెప్పలు', category: 'positive' },
+  { word: 'Dancing eyes', category: 'positive' },
+  { word: 'Flashing eyes', category: 'positive' },
+  { word: 'Glittering eyes', category: 'positive' },
+  { word: 'Sparkling eyes', category: 'positive' },
+  { word: 'Twinkling eyes', category: 'positive' },
+  { word: 'Dark eyes', category: 'neutral' },
+  { word: 'Brown eyes', category: 'neutral' },
+  { word: 'Blue eyes', category: 'neutral' },
+  { word: 'Light blue eyes', category: 'neutral' },
+  { word: 'Bright eyes', category: 'positive' },
+  { word: 'Expressive eyes', category: 'positive' },
+  { word: 'Long lashed eyes', category: 'positive' },
+  { word: 'Piercing eyes', category: 'neutral' },
+  { word: 'Soulful', category: 'positive' },
+  { word: 'Misty', category: 'neutral' },
+  { word: 'Keen vision', category: 'positive' },
+  { word: 'Blurred vision', category: 'negative' },
+  { word: 'Sharp-eyed', category: 'positive' },
 ];
 
 const PLACE_ADJECTIVES: Adjective[] = [
-  { word: 'Lovely', telugu: 'సుందరమైన', category: 'positive' },
-  { word: 'Magnificent', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Endearing', telugu: 'మనోహరమైన', category: 'positive' },
-  { word: 'Enchanting', telugu: 'మంత్రముగ్ధులను చేసే', category: 'positive' },
-  { word: 'Eye catching', telugu: 'కంటికి ఇంపుగా', category: 'positive' },
-  { word: 'Picturesque', telugu: 'సుందరమైన', category: 'positive' },
-  { word: 'Amazing', telugu: 'అద్భుతమైన', category: 'positive' },
-  { word: 'Beautiful', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Modern', telugu: 'ఆధునిక', category: 'neutral' },
-  { word: 'Natural', telugu: 'సహజ', category: 'positive' },
-  { word: 'Tranquil', telugu: 'ప్రశాంతమైన', category: 'positive' },
-  { word: 'Romantic', telugu: 'శృంగార', category: 'positive' },
-  { word: 'Panoramic', telugu: 'విశాలమైన', category: 'positive' },
+  { word: 'Lovely', category: 'positive' },
+  { word: 'Magnificent', category: 'positive' },
+  { word: 'Endearing', category: 'positive' },
+  { word: 'Enchanting', category: 'positive' },
+  { word: 'Eye catching', category: 'positive' },
+  { word: 'Picturesque', category: 'positive' },
+  { word: 'Amazing', category: 'positive' },
+  { word: 'Beautiful', category: 'positive' },
+  { word: 'Modern', category: 'neutral' },
+  { word: 'Natural', category: 'positive' },
+  { word: 'Tranquil', category: 'positive' },
+  { word: 'Romantic', category: 'positive' },
+  { word: 'Panoramic', category: 'positive' },
 ];
 
 const EXPRESSION_ADJECTIVES: Adjective[] = [
-  { word: 'Absent', telugu: 'పరధ్యానంలో ఉన్న', category: 'neutral' },
-  { word: 'Appealing', telugu: 'ఆకర్షించే', category: 'positive' },
-  { word: 'Beatific', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Curious', telugu: 'ఆసక్తి కలిగిన', category: 'positive' },
-  { word: 'Dreamy', telugu: 'ఊహలలో', category: 'positive' },
-  { word: 'Meaningful', telugu: 'అర్థవంతమైన', category: 'positive' },
-  { word: 'Mischievous', telugu: 'కోంటె', category: 'neutral' },
-  { word: 'Radiant', telugu: 'ప్రకాశించే', category: 'positive' },
-  { word: 'Smiley', telugu: 'చిరునవ్వుతో ఉన్న', category: 'positive' },
-  { word: 'Thoughtful', telugu: 'ఆలోచనతో కూడిన', category: 'positive' },
-  { word: 'Worried', telugu: 'ఆందోళనతో కూడిన', category: 'negative' },
+  { word: 'Absent', category: 'neutral' },
+  { word: 'Appealing', category: 'positive' },
+  { word: 'Beatific', category: 'positive' },
+  { word: 'Curious', category: 'positive' },
+  { word: 'Dreamy', category: 'positive' },
+  { word: 'Meaningful', category: 'positive' },
+  { word: 'Mischievous', category: 'neutral' },
+  { word: 'Radiant', category: 'positive' },
+  { word: 'Smiley', category: 'positive' },
+  { word: 'Thoughtful', category: 'positive' },
+  { word: 'Worried', category: 'negative' },
 ];
 
 const FOOD_ADJECTIVES: Adjective[] = [
-  { word: 'Deep fried', telugu: 'బాగా వేగిన', category: 'neutral' },
-  { word: 'Juicy', telugu: 'రసముతో కూడిన', category: 'positive' },
-  { word: 'Bitter', telugu: 'చేదుగా ఉన్న', category: 'neutral' },
-  { word: 'Salty', telugu: 'ఉప్పగా ఉన్న', category: 'neutral' },
-  { word: 'Tasteless', telugu: 'రుచిలేని', category: 'negative' },
-  { word: 'Tempting', telugu: 'ఉరించే', category: 'positive' },
-  { word: 'Tasty', telugu: 'రుచికరమైన', category: 'positive' },
-  { word: 'Delicious', telugu: 'రుచికరమైన', category: 'positive' },
-  { word: 'Yummy', telugu: 'నోరూరించే', category: 'positive' },
+  { word: 'Deep fried', category: 'neutral' },
+  { word: 'Juicy', category: 'positive' },
+  { word: 'Bitter', category: 'neutral' },
+  { word: 'Salty', category: 'neutral' },
+  { word: 'Tasteless', category: 'negative' },
+  { word: 'Tempting', category: 'positive' },
+  { word: 'Tasty', category: 'positive' },
+  { word: 'Delicious', category: 'positive' },
+  { word: 'Yummy', category: 'positive' },
 ];
 
 const HAIR_ADJECTIVES: Adjective[] = [
-  { word: 'Short hair', telugu: 'చిన్న జుట్టు', category: 'neutral' },
-  { word: 'Straight hair', telugu: 'నేరుగా జుట్టు', category: 'neutral' },
-  { word: 'Wavy hair', telugu: 'అల వంటి జుట్టు', category: 'neutral' },
-  { word: 'Long hair', telugu: 'పొడవైన జుట్టు', category: 'neutral' },
-  { word: 'Silky hair', telugu: 'సిల్కీ జుట్టు', category: 'positive' },
-  { word: 'Curly hair', telugu: 'గిరజాల జుట్టు', category: 'neutral' },
-  { word: 'Smooth hair', telugu: 'మృదువైన జుట్టు', category: 'positive' },
-  { word: 'Shiny hair', telugu: 'మెరిసే జుట్టు', category: 'positive' },
-  { word: 'Neatly combed hair', telugu: 'చక్కగా దువ్వుకున్న జుట్టు', category: 'positive' },
+  { word: 'Short hair', category: 'neutral' },
+  { word: 'Straight hair', category: 'neutral' },
+  { word: 'Wavy hair', category: 'neutral' },
+  { word: 'Long hair', category: 'neutral' },
+  { word: 'Silky hair', category: 'positive' },
+  { word: 'Curly hair', category: 'neutral' },
+  { word: 'Smooth hair', category: 'positive' },
+  { word: 'Shiny hair', category: 'positive' },
+  { word: 'Neatly combed hair', category: 'positive' },
 ];
 
 const SMILE_ADJECTIVES: Adjective[] = [
-  { word: 'Sincere', telugu: 'నిష్కపటమైన', category: 'positive' },
-  { word: 'Sweet', telugu: 'తీయని', category: 'positive' },
-  { word: 'Welcoming', telugu: 'ఆహ్వానించే', category: 'positive' },
-  { word: 'Gracious', telugu: 'దయగల', category: 'positive' },
-  { word: 'Dazzling', telugu: 'మిరుమిట్లు గొలిపే', category: 'positive' },
-  { word: 'Lovely', telugu: 'సుందరమైన', category: 'positive' },
-  { word: 'Loving', telugu: 'ప్రేమించే', category: 'positive' },
-  { word: 'Beautiful', telugu: 'అందమైన', category: 'positive' },
-  { word: 'Beaming', telugu: 'ప్రకాశించే', category: 'positive' },
-  { word: 'Glowing', telugu: 'ప్రకాశించే', category: 'positive' },
+  { word: 'Sincere', category: 'positive' },
+  { word: 'Sweet', category: 'positive' },
+  { word: 'Welcoming', category: 'positive' },
+  { word: 'Gracious', category: 'positive' },
+  { word: 'Dazzling', category: 'positive' },
+  { word: 'Lovely', category: 'positive' },
+  { word: 'Loving', category: 'positive' },
+  { word: 'Beautiful', category: 'positive' },
+  { word: 'Beaming', category: 'positive' },
+  { word: 'Glowing', category: 'positive' },
 ];
 
 const EARS_NOSE_ADJECTIVES: Adjective[] = [
-  { word: 'Nice nose', telugu: 'చక్కని ముక్కు', category: 'positive' },
-  { word: 'Small nose', telugu: 'చిన్న ముక్కు', category: 'neutral' },
-  { word: 'Big nose', telugu: 'పెద్ద ముక్కు', category: 'neutral' },
-  { word: 'Flat nose', telugu: 'చదునైన ముక్కు', category: 'neutral' },
-  { word: 'Thin nose', telugu: 'సన్నని ముక్కు', category: 'neutral' },
-  { word: 'Thick nose', telugu: 'మందపాటి ముక్కు', category: 'neutral' },
-  { word: 'Roman nose', telugu: 'రోమన్ ముక్కు', category: 'neutral' },
-  { word: 'Delicate nose', telugu: 'సున్నితమైన ముక్కు', category: 'positive' },
+  { word: 'Nice nose', category: 'positive' },
+  { word: 'Small nose', category: 'neutral' },
+  { word: 'Big nose', category: 'neutral' },
+  { word: 'Flat nose', category: 'neutral' },
+  { word: 'Thin nose', category: 'neutral' },
+  { word: 'Thick nose', category: 'neutral' },
+  { word: 'Roman nose', category: 'neutral' },
+  { word: 'Delicate nose', category: 'positive' },
 ];
 
 const SKIN_ADJECTIVES: Adjective[] = [
-  { word: 'Blooming', telugu: 'వికసించేది', category: 'positive' },
-  { word: 'Clear', telugu: 'స్వచ్చ్లమైన', category: 'positive' },
-  { word: 'Glowing', telugu: 'ప్రకాశించే', category: 'positive' },
-  { word: 'Fair', telugu: 'చక్కనైన', category: 'positive' },
-  { word: 'Rosy', telugu: 'గులాబీ రంగు', category: 'positive' },
-  { word: 'Ruddy', telugu: 'ఎరుపుెక్కిన', category: 'neutral' },
-  { word: 'Tanned', telugu: 'జలృ పట్టిన', category: 'neutral' },
+  { word: 'Blooming', category: 'positive' },
+  { word: 'Clear', category: 'positive' },
+  { word: 'Glowing', category: 'positive' },
+  { word: 'Fair', category: 'positive' },
+  { word: 'Rosy', category: 'positive' },
+  { word: 'Ruddy', category: 'neutral' },
+  { word: 'Tanned', category: 'neutral' },
+];
+
+const COMPARATIVE_ADJECTIVES: Adjective[] = [
+  { word: 'Taller than', category: 'neutral' },
+  { word: 'Shorter than', category: 'neutral' },
+  { word: 'More beautiful than', category: 'positive' },
+  { word: 'More handsome than', category: 'positive' },
+  { word: 'Prettier than', category: 'positive' },
+  { word: 'Stronger than', category: 'positive' },
+  { word: 'Faster than', category: 'positive' },
+  { word: 'Smaller than', category: 'neutral' },
+  { word: 'Bigger than', category: 'neutral' },
+  { word: 'More intelligent than', category: 'positive' },
+  { word: 'More creative than', category: 'positive' },
+  { word: 'Kindlier than', category: 'positive' },
+  { word: 'Friendlier than', category: 'positive' },
+  { word: 'More elegant than', category: 'positive' },
+];
+
+const FACE_ADJECTIVES: Adjective[] = [
+  { word: 'Round face', category: 'neutral' },
+  { word: 'Oval face', category: 'neutral' },
+  { word: 'Square face', category: 'neutral' },
+  { word: 'Thin face', category: 'neutral' },
+  { word: 'Chubby face', category: 'neutral' },
+  { word: 'Chiseled face', category: 'positive' },
+  { word: 'Masked face', category: 'neutral' },
+  { word: 'Bearded face', category: 'neutral' },
+  { word: 'Clean-shaven', category: 'positive' },
+  { word: 'Battered face', category: 'negative' },
+  { word: 'Angelic face', category: 'positive' },
+  { word: 'Radiant face', category: 'positive' },
+  { word: 'Weather-beaten', category: 'neutral' },
+  { word: 'Dimpled', category: 'positive' },
+  { word: 'Freckled', category: 'neutral' },
+  { word: 'Palid', category: 'negative' },
+  { word: 'Sallow', category: 'negative' },
 ];
 
 export function ObjectivePersonality({ section }: { section?: string }) {
-  const [showTelugu, setShowTelugu] = useState(false);
+  const { language } = useLanguage();
+  const { consumeCredits, useCustomKeys, apiKeys } = useCredits();
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -272,141 +350,100 @@ export function ObjectivePersonality({ section }: { section?: string }) {
     }
   };
 
-  const Section = ({ title, icon, data, image, accentColor }: { 
+  const Section = ({ title, definition, icon, data, accentColor, categoryId }: { 
     title: string, 
+    definition?: string,
     icon: React.ReactNode, 
     data: Adjective[], 
-    image: string,
-    accentColor: string
-  }) => (
-    <div className="mb-0">
-      <div className="flex items-center gap-4 mb-8 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
-        <div className={`p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-${accentColor}-100 dark:border-${accentColor}-800`}>
+    accentColor: string,
+    categoryId: string
+  }) => {
+    const accentConfig: Record<string, any> = {
+      sky: { border: 'border-sky-100', darkBorder: 'dark:border-sky-800', hoverBorder: 'hover:border-sky-300 dark:hover:border-sky-500/50', text: 'group-hover:text-sky-600 dark:group-hover:text-sky-400', bg: 'group-hover:bg-sky-50 dark:group-hover:bg-sky-500/10', button: 'bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700' },
+      rose: { border: 'border-rose-100', darkBorder: 'dark:border-rose-800', hoverBorder: 'hover:border-rose-300 dark:hover:border-rose-500/50', text: 'group-hover:text-rose-600 dark:group-hover:text-rose-400', bg: 'group-hover:bg-rose-50 dark:group-hover:bg-rose-500/10', button: 'bg-gradient-to-br from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700' },
+      emerald: { border: 'border-emerald-100', darkBorder: 'dark:border-emerald-800', hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-500/50', text: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400', bg: 'group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10', button: 'bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' },
+      orange: { border: 'border-orange-100', darkBorder: 'dark:border-orange-800', hoverBorder: 'hover:border-orange-300 dark:hover:border-orange-500/50', text: 'group-hover:text-orange-600 dark:group-hover:text-orange-400', bg: 'group-hover:bg-orange-50 dark:group-hover:bg-orange-500/10', button: 'bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700' },
+      violet: { border: 'border-violet-100', darkBorder: 'dark:border-violet-800', hoverBorder: 'hover:border-violet-300 dark:hover:border-violet-500/50', text: 'group-hover:text-violet-600 dark:group-hover:text-violet-400', bg: 'group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10', button: 'bg-gradient-to-br from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700' },
+      cyan: { border: 'border-cyan-100', darkBorder: 'dark:border-cyan-800', hoverBorder: 'hover:border-cyan-300 dark:hover:border-cyan-500/50', text: 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400', bg: 'group-hover:bg-cyan-50 dark:group-hover:bg-cyan-500/10', button: 'bg-gradient-to-br from-cyan-500 to-sky-600 hover:from-cyan-600 hover:to-sky-700' },
+      lime: { border: 'border-lime-100', darkBorder: 'dark:border-lime-800', hoverBorder: 'hover:border-lime-300 dark:hover:border-lime-500/50', text: 'group-hover:text-lime-600 dark:group-hover:text-lime-400', bg: 'group-hover:bg-lime-50 dark:group-hover:bg-lime-500/10', button: 'bg-gradient-to-br from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700' },
+      amber: { border: 'border-amber-100', darkBorder: 'dark:border-amber-800', hoverBorder: 'hover:border-amber-300 dark:hover:border-amber-500/50', text: 'group-hover:text-amber-600 dark:group-hover:text-amber-400', bg: 'group-hover:bg-amber-50 dark:group-hover:bg-amber-500/10', button: 'bg-gradient-to-br from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700' },
+      red: { border: 'border-red-100', darkBorder: 'dark:border-red-800', hoverBorder: 'hover:border-red-300 dark:hover:border-red-500/50', text: 'group-hover:text-red-600 dark:group-hover:text-red-400', bg: 'group-hover:bg-red-50 dark:group-hover:bg-red-500/10', button: 'bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700' },
+      zinc: { border: 'border-zinc-100', darkBorder: 'dark:border-zinc-800', hoverBorder: 'hover:border-zinc-300 dark:hover:border-zinc-500/50', text: 'group-hover:text-zinc-600 dark:group-hover:text-zinc-400', bg: 'group-hover:bg-zinc-50 dark:group-hover:bg-zinc-500/10', button: 'bg-gradient-to-br from-zinc-500 to-slate-600 hover:from-zinc-600 hover:to-slate-700' },
+      yellow: { border: 'border-yellow-100', darkBorder: 'dark:border-yellow-800', hoverBorder: 'hover:border-yellow-300 dark:hover:border-yellow-500/50', text: 'group-hover:text-yellow-600 dark:group-hover:text-yellow-400', bg: 'group-hover:bg-yellow-50 dark:group-hover:bg-yellow-500/10', button: 'bg-gradient-to-br from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600' },
+      slate: { border: 'border-slate-100', darkBorder: 'dark:border-slate-800', hoverBorder: 'hover:border-slate-300 dark:hover:border-slate-500/50', text: 'group-hover:text-slate-600 dark:group-hover:text-slate-400', bg: 'group-hover:bg-slate-50 dark:group-hover:bg-slate-500/10', button: 'bg-gradient-to-br from-slate-500 to-zinc-600 hover:from-slate-600 hover:to-zinc-700' },
+      teal: { border: 'border-teal-100', darkBorder: 'dark:border-teal-800', hoverBorder: 'hover:border-teal-300 dark:hover:border-teal-500/50', text: 'group-hover:text-teal-600 dark:group-hover:text-teal-400', bg: 'group-hover:bg-teal-50 dark:group-hover:bg-teal-500/10', button: 'bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700' },
+      indigo: { border: 'border-indigo-100', darkBorder: 'dark:border-indigo-800', hoverBorder: 'hover:border-indigo-300 dark:hover:border-indigo-500/50', text: 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400', bg: 'group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10', button: 'bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700' },
+    };
+
+    const config = accentConfig[accentColor] || accentConfig.slate;
+
+    return (
+    <div className="mb-16">
+      <div className="flex items-center gap-4 mb-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-8 py-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none sticky top-16 z-30 -mt-4 transition-all">
+        <div className={`p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border ${config.border} ${config.darkBorder}`}>
           {icon}
         </div>
-        <div>
-          <h4 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h4>
-          <p className="text-sm text-slate-500 font-medium tracking-wide uppercase">Trait Categories</p>
+        <div className="flex-1">
+          <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h4>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">{definition}</p>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[300px_1fr] gap-8">
-        <div className="flex flex-col gap-4">
-          <div className="rounded-3xl overflow-hidden shadow-xl border-4 border-white dark:border-slate-800 aspect-[3/4]">
-            <img 
-              src={image} 
-              alt={title} 
-              className="w-full h-full object-cover shadow-inner"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {data.map((item, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.01 }}
-              className={`group p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-${accentColor}-300 dark:hover:border-${accentColor}-500/50 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-between`}
-            >
-              <div className="flex flex-col">
-                <span className={`text-base font-bold text-slate-800 dark:text-slate-200 group-hover:text-${accentColor}-600 dark:group-hover:text-${accentColor}-400 transition-colors`}>
-                  {item.word}
-                </span>
-                {showTelugu && (
-                  <motion.span 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-[11px] text-slate-400 font-bold leading-tight mt-0.5"
-                  >
-                    {item.telugu}
-                  </motion.span>
-                )}
-              </div>
-              <div className={`p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl group-hover:bg-${accentColor}-50 dark:group-hover:bg-${accentColor}-500/10 transition-colors`}>
-                {getCategoryIcon(item.category)}
-              </div>
-            </motion.div>
-          ))}
+      <div className="w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {data.map((item, idx) => {
+            return (
+              <WordCard 
+                key={idx} 
+                word={item.word} 
+                category={categoryId === 'trait' ? 'Personality' : title} 
+                config={config} 
+                idx={idx} 
+                autoFetch={false}
+                showDefine={true}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderContent = () => {
-    switch (section) {
-      case 'man':
-        return <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600&h=800" accentColor="sky" />;
-      case 'woman':
-        return <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600&h=800" accentColor="rose" />;
-      case 'child':
-        return <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://images.unsplash.com/photo-1502086223501-7ea244b05ec6?auto=format&fit=crop&q=80&w=600&h=800" accentColor="emerald" />;
-      case 'trait':
-        return <Section title="Character Trait" icon={<Heart className="w-8 h-8 text-orange-500" />} data={CHARACTER_ADJECTIVES} image="https://picsum.photos/seed/character/600/800" accentColor="orange" />;
-      case 'lips_voice':
-        return <Section title="Lips & Voice" icon={<Mic className="w-8 h-8 text-violet-500" />} data={[...LIPS_ADJECTIVES, ...VOICE_ADJECTIVES]} image="https://picsum.photos/seed/voice_lips/600/800" accentColor="violet" />;
-      case 'eyes':
-        return <Section title="Eyes & Vision" icon={<Eye className="w-8 h-8 text-cyan-500" />} data={EYES_ADJECTIVES} image="https://picsum.photos/seed/eyes/600/800" accentColor="cyan" />;
-      case 'place':
-        return <Section title="Place & Atmosphere" icon={<MapPin className="w-8 h-8 text-lime-500" />} data={PLACE_ADJECTIVES} image="https://picsum.photos/seed/place/600/800" accentColor="lime" />;
-      case 'expressions':
-        return <Section title="Expressions" icon={<Smile className="w-8 h-8 text-amber-500" />} data={EXPRESSION_ADJECTIVES} image="https://picsum.photos/seed/expressions/600/800" accentColor="amber" />;
-      case 'food':
-        return <Section title="Food & Taste" icon={<Utensils className="w-8 h-8 text-red-500" />} data={FOOD_ADJECTIVES} image="https://picsum.photos/seed/food/600/800" accentColor="red" />;
-      case 'hair':
-        return <Section title="Hair Style" icon={<Scissors className="w-8 h-8 text-zinc-500" />} data={HAIR_ADJECTIVES} image="https://picsum.photos/seed/hair/600/800" accentColor="zinc" />;
-      case 'smile':
-        return <Section title="Smile & Joy" icon={<Laugh className="w-8 h-8 text-yellow-500" />} data={SMILE_ADJECTIVES} image="https://picsum.photos/seed/smile/600/800" accentColor="yellow" />;
-      case 'ears_nose':
-        return <Section title="Ears & Nose" icon={<Ear className="w-8 h-8 text-slate-500" />} data={EARS_NOSE_ADJECTIVES} image="https://picsum.photos/seed/ears_nose/600/800" accentColor="slate" />;
-      case 'skin':
-        return <Section title="Skin & Glow" icon={<Users className="w-8 h-8 text-teal-500" />} data={SKIN_ADJECTIVES} image="https://picsum.photos/seed/skin/600/800" accentColor="teal" />;
-      case 'dress':
-        return <Section title="Dress & Style" icon={<Shirt className="w-8 h-8 text-indigo-500" />} data={DRESS_ADJECTIVES} image="https://picsum.photos/seed/dress_style/600/800" accentColor="indigo" />;
-      default:
-        return (
-          <div className="space-y-24">
-            <Section title="Personality: Man" icon={<User className="w-8 h-8 text-sky-500" />} data={MAN_PERSONALITY} image="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600&h=800" accentColor="sky" />
-            <Section title="Personality: Woman" icon={<Users className="w-8 h-8 text-rose-500" />} data={WOMAN_PERSONALITY} image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600&h=800" accentColor="rose" />
-            <Section title="Personality: Child" icon={<Baby className="w-8 h-8 text-emerald-500" />} data={CHILD_PERSONALITY} image="https://images.unsplash.com/photo-1502086223501-7ea244b05ec6?auto=format&fit=crop&q=80&w=600&h=800" accentColor="emerald" />
-            <Section title="Character Trait" icon={<Heart className="w-8 h-8 text-orange-500" />} data={CHARACTER_ADJECTIVES} image="https://picsum.photos/seed/character/600/800" accentColor="orange" />
-            <Section title="Lips & Voice" icon={<Mic className="w-8 h-8 text-violet-500" />} data={[...LIPS_ADJECTIVES, ...VOICE_ADJECTIVES]} image="https://picsum.photos/seed/voice_lips/600/800" accentColor="violet" />
-            <Section title="Eyes & Vision" icon={<Eye className="w-8 h-8 text-cyan-500" />} data={EYES_ADJECTIVES} image="https://picsum.photos/seed/eyes/600/800" accentColor="cyan" />
-            <Section title="Place & Atmosphere" icon={<MapPin className="w-8 h-8 text-lime-500" />} data={PLACE_ADJECTIVES} image="https://picsum.photos/seed/place/600/800" accentColor="lime" />
-            <Section title="Expressions" icon={<Smile className="w-8 h-8 text-amber-500" />} data={EXPRESSION_ADJECTIVES} image="https://picsum.photos/seed/expressions/600/800" accentColor="amber" />
-            <Section title="Food & Taste" icon={<Utensils className="w-8 h-8 text-red-500" />} data={FOOD_ADJECTIVES} image="https://picsum.photos/seed/food/600/800" accentColor="red" />
-            <Section title="Hair Style" icon={<Scissors className="w-8 h-8 text-zinc-500" />} data={HAIR_ADJECTIVES} image="https://picsum.photos/seed/hair/600/800" accentColor="zinc" />
-            <Section title="Smile & Joy" icon={<Laugh className="w-8 h-8 text-yellow-500" />} data={SMILE_ADJECTIVES} image="https://picsum.photos/seed/smile/600/800" accentColor="yellow" />
-            <Section title="Ears & Nose" icon={<Ear className="w-8 h-8 text-slate-500" />} data={EARS_NOSE_ADJECTIVES} image="https://picsum.photos/seed/ears_nose/600/800" accentColor="slate" />
-            <Section title="Skin & Glow" icon={<Users className="w-8 h-8 text-teal-500" />} data={SKIN_ADJECTIVES} image="https://picsum.photos/seed/skin/600/800" accentColor="teal" />
-            <Section title="Dress & Style" icon={<Shirt className="w-8 h-8 text-indigo-500" />} data={DRESS_ADJECTIVES} image="https://picsum.photos/seed/dress_style/600/800" accentColor="indigo" />
-          </div>
-        );
-    }
+    const allSections: SectionData[] = [
+      { id: 'man', title: "Male Traits", definition: "Adjectives used to describe the appearance and qualities of men.", icon: <User className="w-8 h-8 text-sky-500" />, data: MAN_PERSONALITY, accentColor: "sky" },
+      { id: 'woman', title: "Female Traits", definition: "Adjectives used to describe the appearance and qualities of women.", icon: <User className="w-8 h-8 text-rose-500" />, data: WOMAN_PERSONALITY, accentColor: "rose" },
+      { id: 'child', title: "Child Traits", definition: "Sweet and adorable adjectives for describing children.", icon: <Baby className="w-8 h-8 text-violet-500" />, data: CHILD_PERSONALITY, accentColor: "violet" },
+      { id: 'trait', title: "Character Trait", definition: "Internal qualities that define a person's behavior and personality.", icon: <Heart className="w-8 h-8 text-teal-500" />, data: CHARACTER_ADJECTIVES, accentColor: "teal" },
+      { id: 'voice', title: "Voice", definition: "Descriptive words for the sound and tone of someone's speech.", icon: <Mic className="w-8 h-8 text-indigo-500" />, data: VOICE_ADJECTIVES, accentColor: "indigo" },
+      { id: 'lips', title: "Lips", definition: "Terms for the shape, texture, and appearance of lips.", icon: <Mic className="w-8 h-8 text-violet-500" />, data: LIPS_ADJECTIVES, accentColor: "violet" },
+      { id: 'eyes', title: "Vision & Eyes", definition: "Adjectives describing the color, expression, and clarity of eyes.", icon: <Eye className="w-8 h-8 text-cyan-500" />, data: EYES_ADJECTIVES, accentColor: "cyan" },
+      { id: 'place', title: "Pleasant Atmosphere", definition: "Words to describe the mood and aesthetic of a location or setting.", icon: <MapPin className="w-8 h-8 text-lime-500" />, data: PLACE_ADJECTIVES, accentColor: "lime" },
+      { id: 'expressions', title: "Expressions", definition: "Terms used to describe the feelings shown on someone's face.", icon: <Smile className="w-8 h-8 text-amber-500" />, data: EXPRESSION_ADJECTIVES, accentColor: "amber" },
+      { id: 'food', title: "Food and Taste", definition: "Words that describe the flavor, texture, and preparation of food.", icon: <Utensils className="w-8 h-8 text-red-500" />, data: FOOD_ADJECTIVES, accentColor: "red" },
+      { id: 'hair', title: "Hairstyle", definition: "Descriptions for hair length, color, texture, and style.", icon: <Scissors className="w-8 h-8 text-zinc-500" />, data: HAIR_ADJECTIVES, accentColor: "zinc" },
+      { id: 'smile', title: "Smile and Joy", definition: "Positive words describing various types of smiles and happy expressions.", icon: <Laugh className="w-8 h-8 text-yellow-500" />, data: SMILE_ADJECTIVES, accentColor: "yellow" },
+      { id: 'ears_nose', title: "Ears and Nose", definition: "Physical descriptions for the shape and size of ears and noses.", icon: <Ear className="w-8 h-8 text-slate-500" />, data: EARS_NOSE_ADJECTIVES, accentColor: "slate" },
+      { id: 'skin', title: "Skin and Glow", definition: "Adjectives for the complexion, texture, and health of skin.", icon: <Users className="w-8 h-8 text-emerald-500" />, data: SKIN_ADJECTIVES, accentColor: "emerald" },
+      { id: 'comparative', title: "Comparative Adjectives", definition: "Phrases used to compare qualities between two or more people or things.", icon: <Scale className="w-8 h-8 text-indigo-500" />, data: COMPARATIVE_ADJECTIVES, accentColor: "indigo" },
+      { id: 'dress', title: "Dress and Style", definition: "Terms for describing clothing types, quality, and fashion sense.", icon: <Shirt className="w-8 h-8 text-indigo-500" />, data: DRESS_ADJECTIVES, accentColor: "indigo" },
+      { id: 'face', title: "Face Features", definition: "General physical characteristics and shapes of the human face.", icon: <User className="w-8 h-8 text-sky-500" />, data: FACE_ADJECTIVES, accentColor: "sky" },
+    ];
+
+    const filteredSections = section ? allSections.filter(s => s.id === section) : allSections;
+
+    return (
+      <div className="space-y-12">
+        {filteredSections.map((s, i) => (
+          <Section key={i} title={s.title} definition={s.definition} icon={s.icon} data={s.data} accentColor={s.accentColor} categoryId={s.id} />
+        ))}
+      </div>
+    );
   };
 
   return (
     <div className="mt-8 mb-12 max-w-7xl mx-auto px-4">
-      <div className="flex flex-col items-center text-center mb-16">
-        <div className="w-20 h-1.5 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full mb-8"></div>
-        <h3 className="text-4xl sm:text-5xl font-black tracking-tighter text-slate-900 dark:text-white mb-4 italic">
-          Descriptive Adjectives
-        </h3>
-        <p className="text-slate-500 dark:text-slate-400 max-w-2xl text-lg font-medium">
-          A comprehensive guide to adjectives describing people, places, food, and expressions.
-        </p>
-        
-        <button 
-          onClick={() => setShowTelugu(!showTelugu)}
-          className="mt-8 flex items-center gap-3 px-8 py-3 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-black border border-slate-800 dark:border-slate-200 hover:scale-105 transition-all shadow-xl"
-        >
-          <Languages className="w-5 h-5" />
-          {showTelugu ? 'Hide Telugu Meanings' : 'Show Telugu Meanings'}
-        </button>
-      </div>
-
       <div className="mt-4">
         {renderContent()}
       </div>

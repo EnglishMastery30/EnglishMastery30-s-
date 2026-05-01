@@ -1,9 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, ArrowRight, Languages, Loader2, ChevronDown, ChevronUp, Play, Volume2, Type, Mic, MicOff, Eye, EyeOff } from 'lucide-react';
-import { presentTenseDayOne, pastTenseDayTwo, futureTenseDayThree, presentContinuousDayFour, pastContinuousDayFive, futureContinuousDaySix, whQuestionsDayFour, abilityDayEight, possibilityDayNine, obligationDayTen, usedToDayTwentyThree } from '../data/practiceSentences';
+import { BookOpen, ArrowRight, Languages, Loader2, ChevronDown, ChevronUp, Play, Volume2, Type, Mic, MicOff, Eye, EyeOff, Users, Layers, Search } from 'lucide-react';
+import { presentTenseDayOne, pastTenseDayTwo, futureTenseDayThree, presentContinuousDayFour, pastContinuousDayFive, futureContinuousDaySix, whQuestionsDayFour, abilityDayEight, possibilityDayNine, obligationDayTen, usedToDayTwentyThree, peopleAndPlacesDayTen } from '../data/practiceSentences';
 import { day36Content, day37Content, day38Content, day39Content, day40Content, day41Content, day42Content, day43Content } from '../data/part5Sentences';
 import { day44Content, day45Content, day46Content, day47Content, day48Content, day49Content, day50Content, day51Content, day52Content } from '../data/part6Sentences';
+import { 
+  modalsDayEleven, obligationDayTwelve, necessityDayThirteen, desireDayFourteen,
+  challengeDayFifteen, wishDaySixteen, politeRequestDaySeventeen, dutyDayEighteen,
+  plannedFutureDayNineteen, abilityDayTwenty, pastObligationDayTwentyOne, willingnessDayTwentyTwo,
+  presentPerfectDayTwentyFour, pastPerfectDayTwentyFive, futurePerfectDayTwentySix,
+  pastAdviceDayTwentySeven, pastPossibilityDayTwentyEight, pastConditionalsDayTwentyNine,
+  presentPerfectContDayThirty, pastPerfectContDayThirtyOne, futurePerfectContDayThirtyTwo,
+  pastContAdviceDayThirtyThree, pastContPossibilityDayThirtyFour, pastContConditionalsDayThirtyFive
+} from '../data/generatedDays';
 import { GoogleGenAI } from '@google/genai';
 import { WhQuestionsDiagram } from './diagrams/Day4Diagrams';
 import { UniversalDiagram } from './diagrams/UniversalDiagram';
@@ -12,6 +21,7 @@ import { generateDiagramProps } from '../utils/diagramHelper';
 import { dayConfigs } from '../data/dayConfigs';
 import { generateSentences } from '../utils/sentenceGenerator';
 import { InteractiveVocabulary } from './InteractiveVocabulary';
+import { InteractiveNouns } from './InteractiveNouns';
 import { InteractivePronouns } from './InteractivePronouns';
 import { InteractiveVerbs } from './InteractiveVerbs';
 import { ObjectivePersonality } from './ObjectivePersonality';
@@ -23,6 +33,53 @@ import { SmartHighlight } from './SmartHighlight';
 import { InteractiveAdjectives } from './InteractiveAdjectives';
 import { HouseholdActions } from './HouseholdActions';
 import { RoutineKeywords } from './RoutineKeywords';
+import { SentenceCompletionDrill } from './SentenceCompletionDrill';
+import { IdentifyWords } from './IdentifyWords';
+import { PronunciationPractice } from './PronunciationPractice';
+
+interface AccordionSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultExpanded?: boolean;
+}
+
+function AccordionSection({ title, icon, children, defaultExpanded = false }: AccordionSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all hover:shadow-md mb-6">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            {icon}
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h3>
+        </div>
+        <div className={`p-2 rounded-lg transition-transform duration-300 ${isExpanded ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 rotate-180' : 'text-slate-400'}`}>
+          <ChevronDown className="w-5 h-5" />
+        </div>
+      </button>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <div className="p-6 pt-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const emptyContent = `
 🔸 Subject: Coming Soon
@@ -30,19 +87,21 @@ const emptyContent = `
 These practice sentences are being generated and will be available soon.
 `;
 
-const DAYS: Array<{ id: string, title?: string, content?: string, available?: boolean, type?: 'header', titleText?: string, subtitleText?: string }> = [
-  { id: 'pos_mastery', type: 'header', titleText: 'Parts of Speech Mastery', subtitleText: 'Core Fundamentals' },
+const DAYS: Array<{ id: string, title?: string, content?: string, available?: boolean, type?: 'header', titleText?: string, subtitleText?: string, description?: string }> = [
+  { id: 'pos_mastery', type: 'header', titleText: 'Parts of Speech Mastery', subtitleText: 'Core Fundamentals', description: 'Master the essential building blocks of English grammar including Nouns, Verbs, and Adjectives.' },
+  { id: 'mastery_1', title: 'Interactive Mastery', content: '🔸 Subject: Mastery\n🔸 Words to Know\n[INTERACTIVE_WORDS]\n🔸 Pronunciation\n[PRONUNCIATION_DRILL]\n🔸 Identify words\n[IDENTIFY_WORDS_DRILL]\n🔸 Verb Practice\n[INTERACTIVE_VERBS]\n🔸 Adjective Practice\n[INTERACTIVE_ADJECTIVES]\n🔸 Adverb Rules 1\n[ADVERB_VOCAB_1]\n🔸 Adverb Rules 2\n[ADVERB_VOCAB_2]\n', available: true },
+  { id: 'mastery_2', title: 'Parts of Speech Practice', content: '🔸 Subject: Grammar\n🔸 Personal and possessive\n[PRONOUNS_FULL_MODULE]\n🔸 Prepositions Simple\n[PREPOSITIONS_SIMPLE]\n🔸 Prepositions Compound\n[PREPOSITIONS_COMPOUND]\n🔸 Prepositions Two Word\n[PREPOSITIONS_TWO_WORD]\n🔸 Prepositions Phrase\n[PREPOSITIONS_PHRASE]\n🔸 Conjunctions Basic\n[CONJUNCTIONS_BASIC]\n🔸 Conjunctions Words\n[CONJUNCTIONS_WORDS_TO_KNOW]\n🔸 Interjections All\n[INTERJECTIONS_MODULE_ALL]\n🔸 Action Words\n[HOUSEHOLD_ACTIONS]\n🔸 Routine Essentials\n[ROUTINE_KEYWORDS]\n🔸 Descriptive Language\n[INTERACTIVE_ADJECTIVES]\n', available:true },
   { id: 'day44', title: 'Nouns: Definition', content: day44Content, available: true },
   { id: 'day45', title: 'Pronouns: Definition', content: day45Content, available: true },
   { id: 'day46', title: 'Verbs: Action and State', content: day46Content, available: true },
-  { id: 'day47', title: 'Adjectives: Describing Nouns', content: day47Content, available: true },
+  { id: 'day47', title: 'Adjectives', content: day47Content, available: true },
   { id: 'day48', title: 'Adverbs: Modifying Actions', content: day48Content, available: true },
   { id: 'day49', title: 'Prepositions: Core Relationships', content: day49Content, available: true },
   { id: 'day50', title: 'Conjunctions: Connecting Ideas', content: day50Content, available: true },
   { id: 'day51', title: 'Interjections: Expressing Emotion', content: day51Content, available: true },
   { id: 'day52', title: 'Action Words & Routines', content: day52Content, available: true },
 
-  { id: 'part1', type: 'header', titleText: 'Part 1', subtitleText: 'Core Verbs & Tenses' },
+  { id: 'part1', type: 'header', titleText: 'Part 1', subtitleText: 'Core Verbs & Tenses', description: 'Learn how actions happen across time using Present, Past, and Future tenses.' },
   { id: 'day1', title: 'Day 1: Present Tense (DO - DOES)', content: presentTenseDayOne, available: true },
   { id: 'day2', title: 'Day 2: Past Tense (DID)', content: pastTenseDayTwo, available: true },
   { id: 'day3', title: 'Day 3: Future Tense (WILL - SHALL)', content: futureTenseDayThree, available: true },
@@ -51,41 +110,41 @@ const DAYS: Array<{ id: string, title?: string, content?: string, available?: bo
   { id: 'day6', title: 'Day 6: Future Continuous (SHALL BE - WILL BE)', content: futureContinuousDaySix, available: true },
   { id: 'day7', title: 'Day 7: Question Words (WH- QUESTIONS)', content: whQuestionsDayFour, available: true },
 
-  { id: 'part2', type: 'header', titleText: 'Part 2', subtitleText: 'Special Verbs' },
+  { id: 'part2', type: 'header', titleText: 'Part 2', subtitleText: 'Special Verbs', description: 'Master Modal verbs that express ability, permission, possibility, and habits.' },
   { id: 'day8', title: 'Day 8: Ability (CAN - COULD)', content: abilityDayEight, available: true },
   { id: 'day9', title: 'Day 9: Permission & Possibility (MAY - MIGHT)', content: possibilityDayNine, available: true },
-  { id: 'day10', title: 'Day 10: Advice & Obligation (SHOULD - MUST)', content: obligationDayTen, available: true },
-  { id: 'day11', title: 'Day 11: Conditionals & Habits (WOULD)', content: emptyContent, available: true },
+  { id: 'day10', title: 'People & Places', content: peopleAndPlacesDayTen, available: true },
+  { id: 'day11', title: 'Day 11: Conditionals & Habits (WOULD)', content: modalsDayEleven, available: true },
 
-  { id: 'part3', type: 'header', titleText: 'Part 3', subtitleText: 'Advanced Intentions' },
-  { id: 'day12', title: 'Day 12: External Obligation (HAVE TO - HAS TO)', content: emptyContent, available: true },
-  { id: 'day13', title: 'Day 13: Necessity (NEED TO - NEEDS TO)', content: emptyContent, available: true },
-  { id: 'day14', title: 'Day 14: Desire (WANT TO - WANTS TO)', content: emptyContent, available: true },
-  { id: 'day15', title: 'Day 15: Challenge (DARE TO - DARES TO)', content: emptyContent, available: true },
-  { id: 'day16', title: 'Day 16: Strong Desire (WISH TO - WISHES TO)', content: emptyContent, available: true },
-  { id: 'day17', title: 'Day 17: Polite Request (WOULD LIKE TO)', content: emptyContent, available: true },
-  { id: 'day18', title: 'Day 18: Moral Duty (OUGHT TO)', content: emptyContent, available: true },
-  { id: 'day19', title: 'Day 19: Planned Future (GOING TO)', content: emptyContent, available: true },
-  { id: 'day20', title: 'Day 20: Capability (ABLE TO)', content: emptyContent, available: true },
-  { id: 'day21', title: 'Day 21: Past Obligation (HAD TO)', content: emptyContent, available: true },
-  { id: 'day22', title: 'Day 22: Willingness (WILLING TO)', content: emptyContent, available: true },
+  { id: 'part3', type: 'header', titleText: 'Part 3', subtitleText: 'Advanced Intentions', description: 'Express obligation, necessity, desire, challenge, and future plans.' },
+  { id: 'day12', title: 'Day 12: External Obligation (HAVE TO - HAS TO)', content: obligationDayTwelve, available: true },
+  { id: 'day13', title: 'Day 13: Necessity (NEED TO - NEEDS TO)', content: necessityDayThirteen, available: true },
+  { id: 'day14', title: 'Day 14: Desire (WANT TO - WANTS TO)', content: desireDayFourteen, available: true },
+  { id: 'day15', title: 'Day 15: Challenge (DARE TO - DARES TO)', content: challengeDayFifteen, available: true },
+  { id: 'day16', title: 'Day 16: Strong Desire (WISH TO - WISHES TO)', content: wishDaySixteen, available: true },
+  { id: 'day17', title: 'Day 17: Polite Request (WOULD LIKE TO)', content: politeRequestDaySeventeen, available: true },
+  { id: 'day18', title: 'Day 18: Moral Duty (OUGHT TO)', content: dutyDayEighteen, available: true },
+  { id: 'day19', title: 'Day 19: Planned Future (GOING TO)', content: plannedFutureDayNineteen, available: true },
+  { id: 'day20', title: 'Day 20: Capability (ABLE TO)', content: abilityDayTwenty, available: true },
+  { id: 'day21', title: 'Day 21: Past Obligation (HAD TO)', content: pastObligationDayTwentyOne, available: true },
+  { id: 'day22', title: 'Day 22: Willingness (WILLING TO)', content: willingnessDayTwentyTwo, available: true },
   { id: 'day23', title: 'Day 23: Past Habit (USED TO)', content: usedToDayTwentyThree, available: true },
 
-  { id: 'part4', type: 'header', titleText: 'Part 4', subtitleText: 'Perfect Tenses & More' },
-  { id: 'day24', title: 'Day 24: Present Perfect (HAVE - HAS)', content: emptyContent, available: true },
-  { id: 'day25', title: 'Day 25: Past Perfect (HAD)', content: emptyContent, available: true },
-  { id: 'day26', title: 'Day 26: Future Perfect (SHALL HAVE - WILL HAVE)', content: emptyContent, available: true },
-  { id: 'day27', title: 'Day 27: Past Advice & Certainty (SHOULD HAVE - MUST HAVE)', content: emptyContent, available: true },
-  { id: 'day28', title: 'Day 28: Past Possibility (MAY HAVE - MIGHT HAVE)', content: emptyContent, available: true },
-  { id: 'day29', title: 'Day 29: Past Conditionals & Ability (WOULD HAVE - COULD HAVE)', content: emptyContent, available: true },
-  { id: 'day30', title: 'Day 30: Present Perfect Continuous (HAVE BEEN - HAS BEEN)', content: emptyContent, available: true },
-  { id: 'day31', title: 'Day 31: Past Perfect Continuous (HAD BEEN)', content: emptyContent, available: true },
-  { id: 'day32', title: 'Day 32: Future Perfect Continuous (SHALL HAVE BEEN - WILL HAVE BEEN)', content: emptyContent, available: true },
-  { id: 'day33', title: 'Day 33: Past Continuous Advice & Certainty (SHOULD HAVE BEEN - MUST HAVE BEEN)', content: emptyContent, available: true },
-  { id: 'day34', title: 'Day 34: Past Continuous Possibility (MAY HAVE BEEN - MIGHT HAVE BEEN)', content: emptyContent, available: true },
-  { id: 'day35', title: 'Day 35: Past Continuous Conditionals (WOULD HAVE BEEN - COULD HAVE BEEN)', content: emptyContent, available: true },
+  { id: 'part4', type: 'header', titleText: 'Part 4', subtitleText: 'Perfect Tenses & More', description: 'Understand completed actions and their ongoing relevance using Perfect and Perfect Continuous forms.' },
+  { id: 'day24', title: 'Day 24: Present Perfect (HAVE - HAS)', content: presentPerfectDayTwentyFour, available: true },
+  { id: 'day25', title: 'Day 25: Past Perfect (HAD)', content: pastPerfectDayTwentyFive, available: true },
+  { id: 'day26', title: 'Day 26: Future Perfect (SHALL HAVE - WILL HAVE)', content: futurePerfectDayTwentySix, available: true },
+  { id: 'day27', title: 'Day 27: Past Advice & Certainty (SHOULD HAVE - MUST HAVE)', content: pastAdviceDayTwentySeven, available: true },
+  { id: 'day28', title: 'Day 28: Past Possibility (MAY HAVE - MIGHT HAVE)', content: pastPossibilityDayTwentyEight, available: true },
+  { id: 'day29', title: 'Day 29: Past Conditionals & Ability (WOULD HAVE - COULD HAVE)', content: pastConditionalsDayTwentyNine, available: true },
+  { id: 'day30', title: 'Day 30: Present Perfect Continuous (HAVE BEEN - HAS BEEN)', content: presentPerfectContDayThirty, available: true },
+  { id: 'day31', title: 'Day 31: Past Perfect Continuous (HAD BEEN)', content: pastPerfectContDayThirtyOne, available: true },
+  { id: 'day32', title: 'Day 32: Future Perfect Continuous (SHALL HAVE BEEN - WILL HAVE BEEN)', content: futurePerfectContDayThirtyTwo, available: true },
+  { id: 'day33', title: 'Day 33: Past Continuous Advice & Certainty (SHOULD HAVE BEEN - MUST HAVE BEEN)', content: pastContAdviceDayThirtyThree, available: true },
+  { id: 'day34', title: 'Day 34: Past Continuous Possibility (MAY HAVE BEEN - MIGHT HAVE BEEN)', content: pastContPossibilityDayThirtyFour, available: true },
+  { id: 'day35', title: 'Day 35: Past Continuous Conditionals (WOULD HAVE BEEN - COULD HAVE BEEN)', content: pastContConditionalsDayThirtyFive, available: true },
 
-  { id: 'part5', type: 'header', titleText: 'Part 5', subtitleText: 'Advanced Usage & Communication' },
+  { id: 'part5', type: 'header', titleText: 'Part 5', subtitleText: 'Advanced Usage & Communication', description: 'Refine your speaking skills with complex structures and natural everyday expressions.' },
   { id: 'day36', title: 'Day 36: Conditional Thinking', content: day36Content, available: true },
   { id: 'day37', title: 'Day 37: Everyday Expressions', content: day37Content, available: true },
   { id: 'day38', title: 'Day 38: Spoken Communication', content: day38Content, available: true },
@@ -93,10 +152,13 @@ const DAYS: Array<{ id: string, title?: string, content?: string, available?: bo
   { id: 'day40', title: 'Day 40: Been-Form Structures', content: day40Content, available: true },
   { id: 'day41', title: 'Day 41: To-Be Voice Patterns', content: day41Content, available: true },
   { id: 'day42', title: 'Day 42: Auxiliary Verb Mastery', content: day42Content, available: true },
-  { id: 'day43', title: 'Day 43: Infinitive Expressions', content: day43Content, available: true }
+  { id: 'day43', title: 'Day 43: Infinitive Expressions', content: day43Content, available: true },
+  
+  { id: 'ai_drills', type: 'header', titleText: 'AI Powered Drills', subtitleText: 'Dynamic Practice' },
+  { id: 'sentence_completion', title: 'Sentence Completion Challenge', content: '🔸 Subject: AI Mastery\n🔸 SENTENCE_COMPLETION\n[SENTENCE_COMPLETION]\n', available: true }
 ];
 import { generateContentWithFallback } from '../utils/aiFallback';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage, voiceMap, Language } from '../contexts/LanguageContext';
 import { useCredits } from '../contexts/CreditsContext';
 
 interface PracticeItem {
@@ -169,7 +231,7 @@ const parseSentences = (text: string): Record<string, Section[]> => {
       }
 
       if (!isSubjectLine) {
-        currentSection = { title: line.replace(/^[🔸🔹]\s*/, ''), items: [] };
+        currentSection = { title: line.replace(/^(🔸|🔹)\s*/, ''), items: [] };
       }
       currentQ = null;
     } else if (currentSection && currentSubjects.length > 0) {
@@ -201,18 +263,18 @@ const parseSentences = (text: string): Record<string, Section[]> => {
 export function Practice({ isLocked = false, completedSessions = [] }: { isLocked?: boolean, completedSessions?: number[] }) {
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
-  const { language } = useLanguage();
+  const { language, targetLanguage, t } = useLanguage();
   const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
   
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [ipas, setIpas] = useState<Record<string, string>>({});
+  const [translationErrors, setTranslationErrors] = useState<Record<string, string>>({});
+  const [ipaErrors, setIpaErrors] = useState<Record<string, string>>({});
   const [translatingSentence, setTranslatingSentence] = useState<string | null>(null);
   const [fetchingIpa, setFetchingIpa] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<number | null>(0);
   const [expandedSentences, setExpandedSentences] = useState<Record<string, boolean>>({});
   const [userInputs, setUserInputs] = useState<Record<string, string>>({});
-  const [selectedTextTranslation, setSelectedTextTranslation] = useState<{text: string, translation: string, x: number, y: number} | null>(null);
-  const [isTranslatingSelection, setIsTranslatingSelection] = useState(false);
   const [revealedAnswers, setRevealedAnswers] = useState<Record<string, boolean>>({});
   
   const [isListeningSentence, setIsListeningSentence] = useState<string | null>(null);
@@ -274,10 +336,12 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
   const parsedDays = useMemo(() => {
     const result: Record<string, Record<string, Section[]>> = {};
     DAYS.forEach(day => {
-      if (day.available && day.content) {
-        if (day.content === emptyContent && dayConfigs[day.id]) {
+      if (day.available) {
+        if (day.content && day.content !== emptyContent) {
+          result[day.id] = parseSentences(day.content);
+        } else if (dayConfigs[day.id]) {
           result[day.id] = parseSentences(generateSentences(dayConfigs[day.id]));
-        } else {
+        } else if (day.content) {
           result[day.id] = parseSentences(day.content);
         }
       }
@@ -289,20 +353,21 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
     if (translations[sentence]) return; // Already translated
     
     if (!consumeCredits(1, 'Translation AI')) {
-      alert('Insufficient credits. Please buy more credits or use your own API key.');
+      setTranslationErrors(prev => ({ ...prev, [sentence]: "Insufficient credits." }));
       return;
     }
 
     setTranslatingSentence(sentence);
+    setTranslationErrors(prev => { const next = {...prev}; delete next[sentence]; return next; });
     try {
       const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error("API key is missing.");
       const ai = new GoogleGenAI({ apiKey });
 
-      const targetLang = language === 'en' ? 'te' : language;
+      const targetLang = targetLanguage;
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: `Translate the following English sentence into ${targetLang}. Provide ONLY the translation, nothing else.
         
         Sentence: ${sentence}`
@@ -310,10 +375,12 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
 
       if (response.text) {
         setTranslations(prev => ({ ...prev, [sentence]: response.text.trim() }));
+      } else {
+        throw new Error("No translation generated");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Sorry, there was an error translating the sentence.');
+      setTranslationErrors(prev => ({ ...prev, [sentence]: `Failed to translate: ${error.message || String(error)}` }));
     } finally {
       setTranslatingSentence(null);
     }
@@ -323,18 +390,19 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
     if (ipas[sentence]) return;
     
     if (!consumeCredits(1, 'IPA AI')) {
-      alert('Insufficient credits.');
+      setIpaErrors(prev => ({ ...prev, [sentence]: "Insufficient credits." }));
       return;
     }
 
     setFetchingIpa(sentence);
+    setIpaErrors(prev => { const next = {...prev}; delete next[sentence]; return next; });
     try {
       const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error("API key is missing.");
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: `Provide ONLY the IPA (International Phonetic Alphabet) pronunciation for this English sentence. Do not include any other text.
         
         Sentence: ${sentence}`
@@ -342,20 +410,28 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
 
       if (response.text) {
         setIpas(prev => ({ ...prev, [sentence]: response.text.trim() }));
+      } else {
+        throw new Error("No IPA generated");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      setIpaErrors(prev => ({ ...prev, [sentence]: `Failed to get IPA: ${error.message || String(error)}` }));
     } finally {
       setFetchingIpa(null);
     }
   };
 
-  const handlePlayAudio = (text: string, e: React.MouseEvent) => {
+  const handlePlayAudio = (text: string, e: React.MouseEvent, targetLangStr: string = 'en-US') => {
     e.stopPropagation();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
+      utterance.lang = targetLangStr;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const targetVoice = voices.find(v => v.lang.startsWith(targetLangStr));
+      if (targetVoice) utterance.voice = targetVoice;
+      
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     } else {
@@ -363,53 +439,12 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
     }
   };
 
-  const handleTextSelection = async (e: React.MouseEvent) => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
-      setSelectedTextTranslation(null);
-      return;
-    }
-
-    const text = selection.toString().trim();
-    if (text.length === 0 || text.split(' ').length > 5) return; // Only translate short phrases/words on selection
-
-    if (!consumeCredits(1, 'Quick Translate AI')) return;
-
-    setIsTranslatingSelection(true);
-    
-    // Get coordinates for popover
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    
-    setSelectedTextTranslation({ text, translation: 'Translating...', x: rect.left + window.scrollX + (rect.width / 2), y: rect.top + window.scrollY - 10 });
-
-    try {
-      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
-      if (!apiKey) throw new Error("API key is missing.");
-      const ai = new GoogleGenAI({ apiKey });
-      const targetLang = language === 'en' ? 'te' : language;
-
-      const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
-        contents: `Translate this short English text into ${targetLang}. Provide ONLY the translation. Text: "${text}"`
-      });
-
-      if (response.text) {
-        setSelectedTextTranslation(prev => prev ? { ...prev, translation: response.text!.trim() } : null);
-      }
-    } catch (error) {
-      setSelectedTextTranslation(null);
-    } finally {
-      setIsTranslatingSelection(false);
-    }
-  };
-
   if (!activeDayId) {
     return (
       <div className="space-y-8 max-w-5xl mx-auto">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Practice Dashboard</h1>
-          <p className="text-slate-600 dark:text-slate-400">Select a day to begin your practice.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('practice.dashboard')}</h1>
+          <p className="text-slate-600 dark:text-slate-400">{t('practice.selectDay')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -418,9 +453,14 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
               return (
                 <div key={day.id} className="col-span-1 md:col-span-2 mt-8 mb-2">
                    <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                     <span className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm uppercase tracking-widest">{day.titleText}</span>
+                     <span className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm font-bold tracking-widest shrink-0">{day.titleText}</span>
                      {day.subtitleText}
                    </h2>
+                   {day.description && (
+                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl italic">
+                       {day.description}
+                     </p>
+                   )}
                    <div className="h-px bg-slate-200 dark:bg-slate-800 mt-4 w-full"></div>
                 </div>
               );
@@ -565,19 +605,8 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
   const sections = parsedDays[activeDayId]?.[activeSubject!] || [];
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto relative" onMouseUp={handleTextSelection}>
-      {selectedTextTranslation && (
-        <div 
-          className="absolute z-50 bg-slate-900 text-white text-sm px-3 py-2 rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 translate-y-3 whitespace-nowrap"
-          style={{ left: selectedTextTranslation.x, top: selectedTextTranslation.y }}
-        >
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-slate-900"></div>
-          <div className="text-indigo-300 font-bold mb-1">{selectedTextTranslation.translation}</div>
-          <div className="font-medium text-slate-300 text-xs">{selectedTextTranslation.text}</div>
-        </div>
-      )}
-
-      <div className="flex items-center gap-4">
+    <div className="space-y-8 max-w-4xl mx-auto relative">
+      <div className="flex items-center gap-4 sticky top-16 z-20 bg-slate-50 dark:bg-slate-950 py-4 -mt-4 mb-4 border-b border-transparent transition-all">
         <button 
           onClick={() => setActiveSubject(null)}
           className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
@@ -586,8 +615,7 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
         </button>
         <div>
           <div className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-1">{currentDay?.title}</div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">"{activeSubject}" Practice</h1>
-          <p className="text-slate-600 dark:text-slate-400">Click any sentence to translate it.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">"{activeSubject}" Practice</h1>
         </div>
       </div>
 
@@ -595,9 +623,9 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
         {sections.map((section, sIndex) => (
           <div key={sIndex} className="space-y-6">
             <div className="border-l-4 border-indigo-500 pl-4 py-1">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+              <div role="heading" aria-level={3} className="text-xl font-bold text-slate-800 dark:text-slate-200">
                 <SmartHighlight text={section.title} topic={activeSubject || currentDay?.title} />
-              </h3>
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -605,15 +633,67 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                 const sentence = item.text;
                 
                 if (sentence === '[INTERACTIVE_WORDS]') {
-                  return <InteractiveVocabulary key={index} />;
+                  return (
+                    <AccordionSection key={index} title="Words to know practice" icon={<Languages className="w-6 h-6" />}>
+                      <InteractiveVocabulary />
+                    </AccordionSection>
+                  );
+                }
+
+                if (sentence === '[INTERACTIVE_NOUNS]') {
+                  return (
+                    <AccordionSection key={index} title="Noun Categorization" icon={<Layers className="w-6 h-6" />}>
+                      <InteractiveNouns />
+                    </AccordionSection>
+                  );
                 }
 
                 if (sentence === '[INTERACTIVE_PRONOUNS]') {
-                  return <InteractivePronouns key={index} />;
+                  return (
+                    <AccordionSection key={index} title="Words to Know (Pronouns)" icon={<Layers className="w-6 h-6" />}>
+                      <InteractivePronouns section="all" />
+                    </AccordionSection>
+                  );
+                }
+
+                if (sentence === '[PRONOUNS_FULL_MODULE]') {
+                  return (
+                    <div key={index} className="space-y-6">
+                      <AccordionSection title="Personal and possessive" icon={<Users className="w-6 h-6" />}>
+                        <InteractivePronouns section="personal" />
+                      </AccordionSection>
+                      <AccordionSection title="Indefinite Words" icon={<Layers className="w-6 h-6" />}>
+                        <InteractivePronouns section="indefinite" />
+                      </AccordionSection>
+                      <AccordionSection title="Question and relative words" icon={<Type className="w-6 h-6" />}>
+                        <InteractivePronouns section="question" />
+                      </AccordionSection>
+                    </div>
+                  );
                 }
 
                 if (sentence === '[INTERACTIVE_VERBS]') {
-                  return <InteractiveVerbs key={index} />;
+                  return (
+                    <AccordionSection key={index} title="Verb Practice" icon={<Play className="w-6 h-6" />}>
+                      <InteractiveVerbs />
+                    </AccordionSection>
+                  );
+                }
+
+                if (sentence === '[PRONUNCIATION_DRILL]') {
+                  return (
+                    <AccordionSection key={index} title="Pronunciation" icon={<Mic className="w-6 h-6" />}>
+                      <PronunciationPractice />
+                    </AccordionSection>
+                  );
+                }
+
+                if (sentence === '[IDENTIFY_WORDS_DRILL]') {
+                  return (
+                    <AccordionSection key={index} title="Identify words" icon={<Search className="w-6 h-6" />}>
+                      <IdentifyWords />
+                    </AccordionSection>
+                  );
                 }
 
                 if (sentence === '[OBJECTIVE_PERSONALITY]') {
@@ -630,6 +710,54 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
 
                 if (sentence === '[PERSONALITY_CHILD]') {
                   return <ObjectivePersonality key={index} section="child" />;
+                }
+
+                if (sentence === '[PERSONALITY_FACE]') {
+                  return <ObjectivePersonality key={index} section="face" />;
+                }
+
+                if (sentence === '[PERSONALITY_LIPS]') {
+                  return <ObjectivePersonality key={index} section="lips" />;
+                }
+
+                if (sentence === '[PERSONALITY_VOICE]') {
+                  return <ObjectivePersonality key={index} section="voice" />;
+                }
+
+                if (sentence === '[PERSONALITY_EYES]') {
+                  return <ObjectivePersonality key={index} section="eyes" />;
+                }
+
+                if (sentence === '[PERSONALITY_PLACE]') {
+                  return <ObjectivePersonality key={index} section="place" />;
+                }
+
+                if (sentence === '[PERSONALITY_EXPRESSIONS]') {
+                  return <ObjectivePersonality key={index} section="expressions" />;
+                }
+
+                if (sentence === '[PERSONALITY_FOOD]') {
+                  return <ObjectivePersonality key={index} section="food" />;
+                }
+
+                if (sentence === '[PERSONALITY_HAIR]') {
+                  return <ObjectivePersonality key={index} section="hair" />;
+                }
+
+                if (sentence === '[PERSONALITY_SMILE]') {
+                  return <ObjectivePersonality key={index} section="smile" />;
+                }
+
+                if (sentence === '[PERSONALITY_EARS_NOSE]') {
+                  return <ObjectivePersonality key={index} section="ears_nose" />;
+                }
+
+                if (sentence === '[PERSONALITY_SKIN]') {
+                  return <ObjectivePersonality key={index} section="skin" />;
+                }
+
+                if (sentence === '[PERSONALITY_DRESS]') {
+                  return <ObjectivePersonality key={index} section="dress" />;
                 }
 
                 if (sentence === '[CHARACTER_TRAIT]') {
@@ -688,6 +816,10 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                   return <RoutineKeywords key={index} />;
                 }
 
+                if (sentence === '[SENTENCE_COMPLETION]') {
+                  return <SentenceCompletionDrill key={index} />;
+                }
+
                 return (
                   <div 
                     key={index}
@@ -709,9 +841,9 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                         });
                       }}
                     >
-                      <p className={`text-lg sm:text-xl font-medium transition-colors ${expandedSentences[sentence] ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-800 dark:text-slate-200'}`}>
+                      <div className={`text-lg sm:text-xl font-medium transition-colors ${expandedSentences[sentence] ? 'text-indigo-900 dark:text-indigo-100' : 'text-slate-800 dark:text-slate-200'}`}>
                         <SmartHighlight text={sentence} topic={activeSubject || currentDay?.title} />
-                      </p>
+                      </div>
                       
                       <div className="flex items-center shrink-0 mt-0.5">
                         <div
@@ -743,7 +875,7 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                                 className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 py-3 px-6 bg-white hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-500/10 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all font-medium border border-slate-200 dark:border-slate-700 shadow-sm w-full"
                                 title="Listen"
                               >
-                                <Volume2 className="w-5 h-5" />
+                                <Mic className="w-5 h-5" />
                                 <span className="text-xs sm:text-sm">Listen</span>
                               </button>
                             </div>
@@ -763,13 +895,18 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                               
                               {/* Translation Display */}
                               {translations[sentence] && (
-                                <motion.div 
-                                  initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
-                                  className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-100 dark:border-indigo-500/20"
-                                >
-                                  <div className="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mb-1.5">Translation</div>
-                                  <p className="text-indigo-800 dark:text-indigo-200 font-medium text-lg">{translations[sentence]}</p>
-                                </motion.div>
+                                <div className="flex flex-col gap-2 border-t border-indigo-100 dark:border-indigo-500/20 pt-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <p className="text-indigo-800 dark:text-indigo-200 font-medium">{translations[sentence]}</p>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handlePlayAudio(translations[sentence], e, voiceMap[targetLanguage as Language] || targetLanguage); }}
+                                      className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors shrink-0"
+                                      title="Listen to translation"
+                                    >
+                                      <Mic className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
                               )}
 
                               {/* Loading States */}
@@ -777,6 +914,13 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                                 <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 py-4 bg-indigo-50/50 dark:bg-indigo-500/5 rounded-xl border border-indigo-100/50 dark:border-indigo-500/10">
                                   <Loader2 className="w-4 h-4 animate-spin" />
                                   <span>{translatingSentence === sentence ? 'Translating securely...' : 'Generating IPA pronunciation...'}</span>
+                                </div>
+                              )}
+                              
+                              {(translationErrors[sentence] || ipaErrors[sentence]) && (
+                                <div className="flex flex-col gap-2 p-4 bg-rose-50/50 dark:bg-rose-500/5 rounded-xl border border-rose-100/50 dark:border-rose-500/10 text-sm text-rose-600 dark:text-rose-400">
+                                  {translationErrors[sentence] && <p>Translation error: {translationErrors[sentence]}</p>}
+                                  {ipaErrors[sentence] && <p>IPA error: {ipaErrors[sentence]}</p>}
                                 </div>
                               )}
                             </div>

@@ -1,272 +1,250 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { BookOpen, Search } from 'lucide-react';
+import { WordCard } from './WordCard';
 
 interface WordItem {
   en: string;
-  te: string;
 }
 
 const VOCAB_1_WORDS: WordItem[] = [
-  { en: "Accidentally", te: "అనుకోకుండా" },
-  { en: "Afterwards", te: "తరువాత" },
-  { en: "Ago", te: "క్రితం" },
-  { en: "All", te: "అంతా" },
-  { en: "Alone", te: "ఒంటరిగా" },
-  { en: "Angrily", te: "కోపంగా" },
-  { en: "Anywhere", te: "ఎక్కడైనా" },
-  { en: "Artificially", te: "కృత్రిమంగా" },
-  { en: "Automatically", te: "దానంతట అదే" },
-  { en: "Away", te: "దూరంగా" },
-  { en: "Back", te: "వెనుకకు" },
-  { en: "Badly", te: "ఘోరంగా" },
-  { en: "Before", te: "ముందు" },
-  { en: "Behind", te: "వెనుక" },
-  { en: "Below", te: "క్రింద" },
-  { en: "Beyond", te: "ఆవల" },
-  { en: "Brightly", te: "ప్రకాశవంతంగా" },
-  { en: "Calmly", te: "ప్రశాంతంగా" },
-  { en: "Carefully", te: "జాగ్రత్తగా" },
-  { en: "Carelessly", te: "అజాగ్రత్తగా" },
-  { en: "Certainly", te: "ఖచ్చితంగా" },
-  { en: "Cheaply", te: "చౌకగా" },
-  { en: "Closely", te: "దగ్గరగా" },
-  { en: "Completely", te: "పూర్తిగా" },
-  { en: "Confidently", te: "ఆత్మవిశ్వాసంతో" },
-  { en: "Continuously", te: "నిరంతరంగా" },
-  { en: "Correctly", te: "సరిగ్గా" },
-  { en: "Deeply", te: "లోతుగా" },
-  { en: "Definitely", te: "నిశ్చయంగా" },
-  { en: "Deliberately", te: "కావాలనే" },
-  { en: "Differently", te: "భిన్నంగా" },
-  { en: "Directly", te: "నేరుగా" },
-  { en: "Dishonestly", te: "అవినీతిగా" },
-  { en: "Downwards", te: "క్రిందికి" },
-  { en: "Easily", te: "సులభంగా" },
-  { en: "Effectively", te: "ప్రభావవంతంగా" },
-  { en: "Efficiently", te: "సమర్థవంతంగా" },
-  { en: "Equally", te: "సమానంగా" },
-  { en: "Especially", te: "ముఖ్యంగా" },
-  { en: "Evenly", te: "సమంగా" },
-  { en: "Ever", te: "ఎప్పుడైనా" },
-  { en: "Everywhere", te: "అన్నిచోట్లా" },
-  { en: "Exactly", te: "ఖచ్చితంగా" },
-  { en: "Extremely", te: "అత్యంత" },
-  { en: "Fairly", te: "న్యాయంగా" },
-  { en: "Far", te: "దూరం" },
-  { en: "Fast", te: "వేగంగా" },
-  { en: "Finally", te: "చివరకు" },
-  { en: "Financially", te: "ఆర్థికంగా" },
-  { en: "Finely", te: "ముక్కలుగా" },
-  { en: "Firmly", te: "దృఢంగా" },
-  { en: "Forcefully", te: "బలవంతంగా" },
-  { en: "Formally", te: "అధికారికంగా" },
-  { en: "Forwards", te: "ముందుకు" },
-  { en: "Freely", te: "స్వేచ్ఛగా" },
-  { en: "Frequently", te: "తరచుగా" },
-  { en: "Fully", te: "పూర్తిగా" },
-  { en: "Further", te: "మరింత" },
-  { en: "Generally", te: "సాధారణంగా" },
-  { en: "Generously", te: "ఉదారంగా" },
-  { en: "Gently", te: "మెల్లిగా" },
-  { en: "Gradually", te: "క్రమంగా" },
-  { en: "Halfway", te: "సగం దారిలో" },
-  { en: "Happily", te: "సంతోషంగా" },
-  { en: "Hardly", te: "కష్టంగా" },
-  { en: "Harshly", te: "కఠినంగా" },
-  { en: "Heavily", te: "భారీగా" },
-  { en: "Here", te: "ఇక్కడ" },
-  { en: "Highly", te: "ఎక్కువగా" },
-  { en: "Honestly", te: "నిజాయితీగా" },
-  { en: "However", te: "ఏది ఏమైనా" },
-  { en: "Illegally", te: "అక్రమంగా" },
-  { en: "Immediately", te: "వెంటనే" },
-  { en: "Independently", te: "స్వతంత్రంగా" },
-  { en: "Indirectly", te: "పరోక్షంగా" },
-  { en: "Instead", te: "బదులుగా" },
-  { en: "Inwards", te: "లోపలికి" },
-  { en: "Least", te: "కనీసం" },
-  { en: "Legally", te: "చట్టబద్ధంగా" },
-  { en: "Lightly", te: "తేలికగా" },
-  { en: "Loosely", te: "వదులుగా" },
-  { en: "Loudly", te: "గట్టిగా" },
-  { en: "Low", te: "తక్కువ" }
+  { en: "Accidentally" },
+  { en: "Afterwards" },
+  { en: "Ago" },
+  { en: "All" },
+  { en: "Alone" },
+  { en: "Angrily" },
+  { en: "Anywhere" },
+  { en: "Artificially" },
+  { en: "Automatically" },
+  { en: "Away" },
+  { en: "Back" },
+  { en: "Badly" },
+  { en: "Before" },
+  { en: "Behind" },
+  { en: "Below" },
+  { en: "Beyond" },
+  { en: "Brightly" },
+  { en: "Calmly" },
+  { en: "Carefully" },
+  { en: "Carelessly" },
+  { en: "Certainly" },
+  { en: "Cheaply" },
+  { en: "Closely" },
+  { en: "Completely" },
+  { en: "Confidently" },
+  { en: "Continuously" },
+  { en: "Correctly" },
+  { en: "Deeply" },
+  { en: "Definitely" },
+  { en: "Deliberately" },
+  { en: "Differently" },
+  { en: "Directly" },
+  { en: "Dishonestly" },
+  { en: "Downwards" },
+  { en: "Easily" },
+  { en: "Effectively" },
+  { en: "Efficiently" },
+  { en: "Equally" },
+  { en: "Especially" },
+  { en: "Evenly" },
+  { en: "Ever" },
+  { en: "Everywhere" },
+  { en: "Exactly" },
+  { en: "Extremely" },
+  { en: "Fairly" },
+  { en: "Far" },
+  { en: "Fast" },
+  { en: "Finally" },
+  { en: "Financially" },
+  { en: "Finely" },
+  { en: "Firmly" },
+  { en: "Forcefully" },
+  { en: "Formally" },
+  { en: "Forwards" },
+  { en: "Freely" },
+  { en: "Frequently" },
+  { en: "Fully" },
+  { en: "Further" },
+  { en: "Generally" },
+  { en: "Generously" },
+  { en: "Gently" },
+  { en: "Gradually" },
+  { en: "Halfway" },
+  { en: "Happily" },
+  { en: "Hardly" },
+  { en: "Harshly" },
+  { en: "Heavily" },
+  { en: "Here" },
+  { en: "Highly" },
+  { en: "Honestly" },
+  { en: "However" },
+  { en: "Illegally" },
+  { en: "Immediately" },
+  { en: "Independently" },
+  { en: "Indirectly" },
+  { en: "Instead" },
+  { en: "Inwards" },
+  { en: "Least" },
+  { en: "Legally" },
+  { en: "Lightly" },
+  { en: "Loosely" },
+  { en: "Loudly" },
+  { en: "Low" }
 ];
 
 const VOCAB_2_GROUPS = [
   {
     title: "Time & Frequency",
     words: [
-      { en: "Now", te: "ఇప్పుడు" },
-      { en: "Then", te: "అప్పుడు" },
-      { en: "Today", te: "ఈ రోజు" },
-      { en: "Yesterday", te: "నిన్న" },
-      { en: "Early", te: "త్వరగా" },
-      { en: "Soon", te: "త్వరలో" },
-      { en: "Just before", te: "కాస్త ముందు" },
-      { en: "Just now", te: "ఇప్పుడే" },
-      { en: "Only", te: "మాత్రమే" },
-      { en: "Never", te: "ఎప్పుడూ కాదు" },
-      { en: "Seldom", te: "అరుదుగా" },
-      { en: "Occasionally", te: "అప్పుడప్పుడు" },
-      { en: "Once", te: "ఒకసారి" },
-      { en: "Twice", te: "రెండుసార్లు" },
-      { en: "Frequently", te: "తరచుగా" },
-      { en: "Regularly", te: "క్రమం తప్పకుండా" }
+      { en: "Now" },
+      { en: "Then" },
+      { en: "Today" },
+      { en: "Yesterday" },
+      { en: "Early" },
+      { en: "Soon" },
+      { en: "Just before" },
+      { en: "Just now" },
+      { en: "Only" },
+      { en: "Never" },
+      { en: "Seldom" },
+      { en: "Occasionally" },
+      { en: "Once" },
+      { en: "Twice" },
+      { en: "Frequently" },
+      { en: "Regularly" }
     ]
   },
   {
     title: "Place & Direction",
     words: [
-      { en: "Here", te: "ఇక్కడ" },
-      { en: "There", te: "అక్కడ" },
-      { en: "In", te: "లోపల" },
-      { en: "Out", te: "బయట" },
-      { en: "Forward", te: "ముందుకు" },
-      { en: "Backward", te: "వెనుకకు" },
-      { en: "Within", te: "లోపల" },
-      { en: "Away", te: "దూరంగా" }
+      { en: "Here" },
+      { en: "There" },
+      { en: "In" },
+      { en: "Out" },
+      { en: "Forward" },
+      { en: "Backward" },
+      { en: "Within" },
+      { en: "Away" }
     ]
   },
   {
     title: "Manner & Degree",
     words: [
-      { en: "Clearly", te: "స్పష్టంగా" },
-      { en: "Quickly", te: "వేగంగా" },
-      { en: "Happily", te: "సంతోషంగా" },
-      { en: "Sadly", te: "విచారంగా" },
-      { en: "Smoothly", te: "సునాయాసంగా" },
-      { en: "Roughly", te: "సుమారుగా" },
-      { en: "Slowly", te: "నెమ్మదిగా" },
-      { en: "Sincerely", te: "నిజాయితీగా" },
-      { en: "Fully", te: "పూర్తిగా" },
-      { en: "Partly", te: "పాక్షికంగా" },
-      { en: "Almost", te: "దాదాపు" },
-      { en: "Very", te: "చాలా" },
-      { en: "Fairly", te: "న్యాయంగా" },
-      { en: "Enough", te: "చాలు" },
-      { en: "Immensely", te: "అత్యధికంగా" }
+      { en: "Clearly" },
+      { en: "Quickly" },
+      { en: "Happily" },
+      { en: "Sadly" },
+      { en: "Smoothly" },
+      { en: "Roughly" },
+      { en: "Slowly" },
+      { en: "Sincerely" },
+      { en: "Fully" },
+      { en: "Partly" },
+      { en: "Almost" },
+      { en: "Very" },
+      { en: "Fairly" },
+      { en: "Enough" },
+      { en: "Immensely" }
     ]
   },
   {
     title: "Certainty",
     words: [
-      { en: "Definitely", te: "ఖచ్చితంగా" },
-      { en: "Obviously", te: "స్పష్టంగా" },
-      { en: "Certainly", te: "ఖచ్చితంగా" },
-      { en: "Surely", te: "నిశ్చయంగా" }
+      { en: "Definitely" },
+      { en: "Obviously" },
+      { en: "Certainly" },
+      { en: "Surely" }
     ]
   },
   {
     title: "Self-Emphasis (Time)",
     words: [
-      { en: "Now itself", te: "ఇప్పుడే" },
-      { en: "Then itself", te: "అప్పుడే" },
-      { en: "Today itself", te: "ఈ రోజే" },
-      { en: "Yesterday itself", te: "నిన్ననే" },
-      { en: "Tomorrow itself", te: "రేపే" },
-      { en: "Morning itself", te: "ఉదయమే" },
-      { en: "Afternoon itself", te: "మధ్యాహ్నమే" },
-      { en: "Evening itself", te: "సాయంత్రమే" }
+      { en: "Now itself" },
+      { en: "Then itself" },
+      { en: "Today itself" },
+      { en: "Yesterday itself" },
+      { en: "Tomorrow itself" },
+      { en: "Morning itself" },
+      { en: "Afternoon itself" },
+      { en: "Evening itself" }
     ]
   },
   {
     title: "Self-Emphasis (Place/Thing)",
     words: [
-      { en: "here itself", te: "ఇక్కడే" },
-      { en: "There itself", te: "అక్కడే" },
-      { en: "In Hyderabad itself", te: "హైదరాబాద్ లోనే" },
-      { en: "In the institute itself", "te": "ఇన్స్టిట్యూట్ లోనే" },
-      { en: "That itself", te: "అదే" },
-      { en: "This itself", te: "ఇదే" },
-      { en: "English itself", te: "ఇంగ్లీషే" },
-      { en: "Movie itself", te: "సినిమానే" }
+      { en: "here itself" },
+      { en: "There itself" },
+      { en: "In Hyderabad itself" },
+      { en: "In the institute itself" },
+      { en: "That itself" },
+      { en: "This itself" },
+      { en: "English itself" },
+      { en: "Movie itself" }
     ]
   }
 ];
 
 export function AdverbVocabulary({ type }: { type: 'vocab_1' | 'vocab_2' }) {
-  const [selectedWord, setSelectedWord] = React.useState<string | null>(null);
-
   if (type === 'vocab_1') {
+    const config = { border: 'border-indigo-100', darkBorder: 'dark:border-indigo-800', hoverBorder: 'hover:border-indigo-300 dark:hover:border-indigo-500/50', text: 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400', bg: 'group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10', button: 'bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700' };
+
     return (
-      <div className="mt-8 space-y-6">
-        <div className="flex items-center gap-3 mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800">
-          <BookOpen className="w-6 h-6 text-indigo-500" />
-          <h4 className="text-xl font-bold text-slate-900 dark:text-white">Adverbs Vocabulary: A to L</h4>
+      <div className="mt-8 space-y-6 px-4">
+        <div className="flex flex-col mb-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-8 py-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all">
+          <div className="flex items-center gap-3 mb-2">
+            <BookOpen className="w-6 h-6 text-indigo-500" />
+            <h4 className="text-xl font-bold text-slate-900 dark:text-white">Adverbs Vocabulary: A to L</h4>
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Adverbs are words that describe or modify verbs, adjectives, or other adverbs.</p>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {VOCAB_1_WORDS.map((item, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.005 }}
-              onClick={() => setSelectedWord(selectedWord === item.en ? null : item.en)}
-              className={`p-3 cursor-pointer border rounded-xl text-center transition-all shadow-sm ${
-                selectedWord === item.en 
-                  ? 'bg-indigo-600 border-indigo-600 text-white' 
-                  : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-indigo-300'
-              }`}
-            >
-              <div className="font-bold text-sm">{item.en}</div>
-              {selectedWord === item.en && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs mt-1 text-indigo-100"
-                >
-                  {item.te}
-                </motion.div>
-              )}
-            </motion.div>
+            <WordCard 
+              key={idx} 
+              word={item.en} 
+              category="Adverb" 
+              config={config} 
+              idx={idx} 
+              autoFetch={false}
+              showDefine={true}
+            />
           ))}
         </div>
       </div>
     );
   }
 
+  const config2 = { border: 'border-emerald-100', darkBorder: 'dark:border-emerald-800', hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-500/50', text: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400', bg: 'group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/10', button: 'bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' };
+
   return (
-    <div className="mt-8 space-y-10">
-      <div className="flex items-center gap-3 mb-2 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-800">
-        <Search className="w-6 h-6 text-emerald-500" />
-        <h4 className="text-xl font-bold text-slate-900 dark:text-white">Adverbs: Contextual Groups</h4>
+    <div className="mt-8 space-y-10 px-4">
+      <div className="flex flex-col mb-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-8 py-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all">
+        <div className="flex items-center gap-3 mb-2">
+          <Search className="w-6 h-6 text-emerald-500" />
+          <h4 className="text-xl font-bold text-slate-900 dark:text-white">Adverbs: Contextual Groups</h4>
+        </div>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Explore adverbs grouped by their usage in time, frequency, place, and more.</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="space-y-12">
         {VOCAB_2_GROUPS.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-4">
-            <h5 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-2">
+          <div key={gIdx} className="space-y-6">
+            <h5 className="text-xl font-black text-slate-800 dark:text-slate-200 border-l-4 border-emerald-500 pl-4 py-1">
               {group.title}
             </h5>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {group.words.map((item, wIdx) => (
-                <motion.div
-                  key={wIdx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (gIdx * 0.05) + (wIdx * 0.01) }}
-                  onClick={() => setSelectedWord(selectedWord === item.en ? null : item.en)}
-                  className={`px-3 py-2 cursor-pointer rounded-lg text-sm font-bold border transition-all ${
-                    selectedWord === item.en
-                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-md scale-105'
-                      : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                  }`}
-                >
-                  <div className="flex flex-col items-center">
-                    <span>{item.en}</span>
-                    {selectedWord === item.en && (
-                      <motion.span 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="text-[10px] text-emerald-100 mt-1"
-                      >
-                        {item.te}
-                      </motion.span>
-                    )}
-                  </div>
-                </motion.div>
+                <WordCard 
+                  key={wIdx} 
+                  word={item.en} 
+                  category={group.title} 
+                  config={config2} 
+                  idx={wIdx} 
+                  autoFetch={false}
+                  showDefine={true}
+                />
               ))}
             </div>
           </div>

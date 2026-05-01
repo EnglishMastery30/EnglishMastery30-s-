@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Home, Coffee, ChefHat, Book, Flower2, Bed, Bath, Languages, Search, ChevronRight } from 'lucide-react';
+import { Home, Coffee, ChefHat, Book, Flower2, Bed, Bath, Search, ChevronRight } from 'lucide-react';
+import { WordCard } from './WordCard';
 
 interface VerbItem {
   en: string;
-  te: string;
 }
 
 interface LocationData {
   title: string;
+  description: string;
   icon: React.ReactNode;
   color: string;
   verbs: VerbItem[];
@@ -17,176 +18,181 @@ interface LocationData {
 const HOUSEHOLD_DATA: LocationData[] = [
   {
     title: 'Living Room',
+    description: 'The space for socializing, relaxing, and family time.',
     icon: <Home className="w-6 h-6" />,
     color: 'indigo',
     verbs: [
-      { en: 'Call', te: 'పిలువు' },
-      { en: 'Discuss', te: 'చర్చించు' },
-      { en: 'Drink', te: 'త్రాగు' },
-      { en: 'Play', te: 'ఆడు' },
-      { en: 'Read', te: 'చదువు' },
-      { en: 'Receive', te: 'స్వీకరించు' },
-      { en: 'Relax', te: 'విశ్రాంతి తీసుకొను' },
-      { en: 'Reset', te: 'తిరిగి చేయు' },
-      { en: 'See', te: 'చూడు' },
-      { en: 'Set', te: 'అమర్చు' },
-      { en: 'Sit', te: 'కూర్చో' },
-      { en: 'Watch', te: 'చూడు' },
-      { en: 'Write', te: 'వ్రాయి' },
-      { en: 'Lean', te: 'ఒరుగు' },
-      { en: 'Tell', te: 'చెప్పండి' }
+      { en: 'Call' },
+      { en: 'Discuss' },
+      { en: 'Drink' },
+      { en: 'Play' },
+      { en: 'Read' },
+      { en: 'Receive' },
+      { en: 'Relax' },
+      { en: 'Reset' },
+      { en: 'See' },
+      { en: 'Set' },
+      { en: 'Sit' },
+      { en: 'Watch' },
+      { en: 'Write' },
+      { en: 'Lean' },
+      { en: 'Tell' }
     ]
   },
   {
     title: 'Dining Hall',
+    description: 'The area where meals are shared and enjoyed.',
     icon: <Coffee className="w-6 h-6" />,
     color: 'amber',
     verbs: [
-      { en: 'Sit', te: 'కూర్చో' },
-      { en: 'Set', te: 'సెట్ చేయు' },
-      { en: 'Serve', te: 'వడ్డించు' },
-      { en: 'Eat', te: 'తిను' },
-      { en: 'Drink', te: 'త్రాగు' },
-      { en: 'Take', te: 'తీసుకో' },
-      { en: 'Have', te: 'కలిగి ఉండు' },
-      { en: 'Prefer', te: 'ఇష్టపడు' },
-      { en: 'Finish', te: 'పూర్తి చేయు' },
-      { en: 'Wash', te: 'కడుగు' },
-      { en: 'Drop', te: 'డ్రాప్ చేయు' },
-      { en: 'Put', te: 'పెట్టు' },
-      { en: 'Leave', te: 'వదిలిపెట్టు' }
+      { en: 'Sit' },
+      { en: 'Set' },
+      { en: 'Serve' },
+      { en: 'Eat' },
+      { en: 'Drink' },
+      { en: 'Take' },
+      { en: 'Have' },
+      { en: 'Prefer' },
+      { en: 'Finish' },
+      { en: 'Wash' },
+      { en: 'Drop' },
+      { en: 'Put' },
+      { en: 'Leave' }
     ]
   },
   {
     title: 'Kitchen',
+    description: 'The place for preparing, cooking, and storing food.',
     icon: <ChefHat className="w-6 h-6" />,
     color: 'emerald',
     verbs: [
-      { en: 'Add', te: 'చేర్చు' },
-      { en: 'Arrange', te: 'సమకూర్చు' },
-      { en: 'Bake', te: 'రొట్టె కాల్చు' },
-      { en: 'Blend', te: 'కలుపు' },
-      { en: 'Boil', te: 'ఉడికించు' },
-      { en: 'Check', te: 'సరిచూచు' },
-      { en: 'Chop', te: 'తరుగు' },
-      { en: 'Clean', te: 'శుభ్రపరచు' },
-      { en: 'Cook', te: 'వంట చేయు' },
-      { en: 'Cut', te: 'కోయు' },
-      { en: 'Garnish', te: 'అలంకరించు' },
-      { en: 'Grill', te: 'కాల్చు' },
-      { en: 'Heat', te: 'వేడి చేయు' },
-      { en: 'Keep', te: 'ఉంచు' },
-      { en: 'Mash', te: 'నలిపి' },
-      { en: 'Mince', te: 'చిన్నగా తరుగు' },
-      { en: 'Mix', te: 'కలుపు' },
-      { en: 'Mop', te: 'తుడువు' },
-      { en: 'Peel', te: 'తొక్క తీయు' },
-      { en: 'Pour', te: 'పోయు' },
-      { en: 'Prepare', te: 'సిద్ధం చేయు' },
-      { en: 'Roast', te: 'వేపు' },
-      { en: 'Serve', te: 'వడ్డించు' },
-      { en: 'Shred', te: 'ముక్కలుగా చేయు' },
-      { en: 'Sprinkle', te: 'వెద జల్లు' },
-      { en: 'Stir', te: 'కలుపు' },
-      { en: 'Sweep', te: 'ఊడ్చు' },
-      { en: 'Taste', te: 'రుచి' },
-      { en: 'Try', te: 'ప్రయత్నించు' }
+      { en: 'Add' },
+      { en: 'Arrange' },
+      { en: 'Bake' },
+      { en: 'Blend' },
+      { en: 'Boil' },
+      { en: 'Check' },
+      { en: 'Chop' },
+      { en: 'Clean' },
+      { en: 'Cook' },
+      { en: 'Cut' },
+      { en: 'Garnish' },
+      { en: 'Grill' },
+      { en: 'Heat' },
+      { en: 'Keep' },
+      { en: 'Mash' },
+      { en: 'Mince' },
+      { en: 'Mix' },
+      { en: 'Mop' },
+      { en: 'Peel' },
+      { en: 'Pour' },
+      { en: 'Prepare' },
+      { en: 'Roast' },
+      { en: 'Serve' },
+      { en: 'Shred' },
+      { en: 'Sprinkle' },
+      { en: 'Stir' },
+      { en: 'Sweep' },
+      { en: 'Taste' },
+      { en: 'Try' }
     ]
   },
   {
     title: 'Bedroom',
+    description: 'A private space for sleeping and resting.',
     icon: <Bed className="w-6 h-6" />,
     color: 'purple',
     verbs: [
-      { en: 'Sleep', te: 'నిద్రించు' },
-      { en: 'Wake up', te: 'మేల్కొను' },
-      { en: 'Wish', te: 'కోరుకొను' },
-      { en: 'Wear', te: 'ధరించు' },
-      { en: 'Get up', te: 'లేచు' },
-      { en: 'Pray', te: 'ప్రార్థించు' },
-      { en: 'Stretch', te: 'సాగదీయు' },
-      { en: 'Make', te: 'చేయు' },
-      { en: 'Fold', te: 'మడత పెట్టు' },
-      { en: 'Unfold', te: 'మడత విప్పు' },
-      { en: 'Set', te: 'అమర్చు' },
-      { en: 'Sweep', te: 'ఊడ్చు' },
-      { en: 'Mop', te: 'తుడువు' },
-      { en: 'Clean', te: 'శుభ్రం చేయు' },
-      { en: 'Do', te: 'చేయు' },
-      { en: 'Dream', te: 'కలలు కను' },
-      { en: 'Remove', te: 'తీసివేయవు' },
-      { en: 'Spray', te: 'చల్లు' },
-      { en: 'Switch off', te: 'ఆఫ్ చేయు' },
-      { en: 'Switch on', te: 'ఆన్ చేయు' }
+      { en: 'Sleep' },
+      { en: 'Wake up' },
+      { en: 'Wish' },
+      { en: 'Wear' },
+      { en: 'Get up' },
+      { en: 'Pray' },
+      { en: 'Stretch' },
+      { en: 'Make' },
+      { en: 'Fold' },
+      { en: 'Unfold' },
+      { en: 'Set' },
+      { en: 'Sweep' },
+      { en: 'Mop' },
+      { en: 'Clean' },
+      { en: 'Do' },
+      { en: 'Dream' },
+      { en: 'Remove' },
+      { en: 'Spray' },
+      { en: 'Switch off' },
+      { en: 'Switch on' }
     ]
   },
   {
     title: 'Study Room',
+    description: 'An area dedicated to reading, learning, and working.',
     icon: <Book className="w-6 h-6" />,
     color: 'rose',
     verbs: [
-      { en: 'Browse', te: 'శోధించు' },
-      { en: 'Chat', te: 'మాట్లాడు' },
-      { en: 'Check', te: 'సరిచూచు' },
-      { en: 'Complete', te: 'పూర్తి చేయు' },
-      { en: 'Copy', te: 'నకలు చేయు' },
-      { en: 'Go through', te: 'పరిశీలించు' },
-      { en: 'Make', te: 'తయారుచేయు' },
-      { en: 'Open', te: 'తెరువు' },
-      { en: 'Practice', te: 'సాధన చేయు' },
-      { en: 'Prepare', te: 'తయారు చేయు' },
-      { en: 'Refer', te: 'సూచించు' },
-      { en: 'Revise', te: 'సవరించు' },
-      { en: 'Send', te: 'పంపించు' },
-      { en: 'See', te: 'చూచు' },
-      { en: 'Nap', te: 'కునుకు తీయు' },
-      { en: 'Draw', te: 'చిత్రించు' },
-      { en: 'Note', te: 'రాసుకొను' },
-      { en: 'Doze', te: 'కునుకు పాట్లు పడు' }
+      { en: 'Browse' },
+      { en: 'Chat' },
+      { en: 'Check' },
+      { en: 'Complete' },
+      { en: 'Copy' },
+      { en: 'Go through' },
+      { en: 'Make' },
+      { en: 'Open' },
+      { en: 'Practice' },
+      { en: 'Prepare' },
+      { en: 'Refer' },
+      { en: 'Revise' },
+      { en: 'Send' },
+      { en: 'See' },
+      { en: 'Nap' },
+      { en: 'Draw' },
+      { en: 'Note' },
+      { en: 'Doze' }
     ]
   },
   {
     title: 'Wash Room',
+    description: 'A place for personal hygiene and cleaning.',
     icon: <Bath className="w-6 h-6" />,
     color: 'sky',
     verbs: [
-      { en: 'Apply', te: 'రాసుకొను' },
-      { en: 'Bath', te: 'స్నానం చేయు' },
-      { en: 'Brush', te: 'బ్రష్ చేయు' },
-      { en: 'Change', te: 'మార్చు' },
-      { en: 'Clean', te: 'శుభ్రం చేయు' },
-      { en: 'Comb', te: 'దువ్వు' },
-      { en: 'Decorate', te: 'అలంకరించు' },
-      { en: 'Wash', te: 'కడుగు' },
-      { en: 'Wear', te: 'ధరించు' }
+      { en: 'Apply' },
+      { en: 'Bath' },
+      { en: 'Brush' },
+      { en: 'Change' },
+      { en: 'Clean' },
+      { en: 'Comb' },
+      { en: 'Decorate' },
+      { en: 'Wash' },
+      { en: 'Wear' }
     ]
   },
   {
     title: 'Garden',
+    description: 'Outdoor space for plants and connecting with nature.',
     icon: <Flower2 className="w-6 h-6" />,
     color: 'green',
     verbs: [
-      { en: 'Walk', te: 'నడువు' },
-      { en: 'Look', te: 'చూచు' },
-      { en: 'Do', te: 'చేయు' },
-      { en: 'Pour', te: 'పోయు' },
-      { en: 'Cut off', te: 'కత్తిరించి వేయు' },
-      { en: 'Pluck', te: 'తెంపు' },
-      { en: 'Use', te: 'ఉపయోగించు' },
-      { en: 'Spend', te: 'గడుపు' }
+      { en: 'Walk' },
+      { en: 'Look' },
+      { en: 'Do' },
+      { en: 'Pour' },
+      { en: 'Cut off' },
+      { en: 'Pluck' },
+      { en: 'Use' },
+      { en: 'Spend' }
     ]
   }
 ];
 
 export function HouseholdActions() {
   const [activeLocation, setActiveLocation] = useState<number | null>(0);
-  const [showTelugu, setShowTelugu] = useState(false);
   const [search, setSearch] = useState('');
 
   const filteredVerbs = activeLocation !== null 
     ? HOUSEHOLD_DATA[activeLocation].verbs.filter(v => 
-        v.en.toLowerCase().includes(search.toLowerCase()) || 
-        v.te.includes(search)
+        v.en.toLowerCase().includes(search.toLowerCase())
       )
     : [];
 
@@ -198,16 +204,6 @@ export function HouseholdActions() {
         <p className="text-slate-600 dark:text-slate-400 max-w-xl">
           Learn vocabulary for actions we perform in different parts of our home.
         </p>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <button 
-            onClick={() => setShowTelugu(!showTelugu)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm"
-          >
-            <Languages className="w-4 h-4" />
-            {showTelugu ? 'Hide Meanings' : 'Show Meanings'}
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -247,34 +243,36 @@ export function HouseholdActions() {
             />
           </div>
 
+          {activeLocation !== null && (
+            <div className={`p-6 rounded-2xl border bg-${HOUSEHOLD_DATA[activeLocation].color}-50 dark:bg-${HOUSEHOLD_DATA[activeLocation].color}-500/5 border-${HOUSEHOLD_DATA[activeLocation].color}-100 dark:border-${HOUSEHOLD_DATA[activeLocation].color}-500/20`}>
+               <h4 className={`text-lg font-bold text-${HOUSEHOLD_DATA[activeLocation].color}-600 dark:text-${HOUSEHOLD_DATA[activeLocation].color}-400 mb-1`}>{HOUSEHOLD_DATA[activeLocation].title}</h4>
+               <p className="text-sm text-slate-500 dark:text-slate-400">{HOUSEHOLD_DATA[activeLocation].description}</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence mode="popLayout">
-              {filteredVerbs.map((verb, idx) => (
-                <motion.div
-                  key={verb.en}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all group"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{verb.en}</span>
-                    <AnimatePresence>
-                      {showTelugu && (
-                        <motion.span 
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="text-indigo-600 dark:text-indigo-400 font-bold"
-                        >
-                          {verb.te}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              ))}
+              {filteredVerbs.map((verb, idx) => {
+                const config = { 
+                  border: `border-slate-100 dark:border-slate-800`, 
+                  darkBorder: '', 
+                  hoverBorder: `hover:border-indigo-300`, 
+                  text: 'group-hover:text-indigo-600', 
+                  bg: 'group-hover:bg-indigo-50', 
+                  button: 'bg-indigo-600' 
+                };
+                return (
+                  <WordCard 
+                    key={verb.en}
+                    word={verb.en}
+                    category={HOUSEHOLD_DATA[activeLocation!].title}
+                    config={config}
+                    idx={idx}
+                    autoFetch={false}
+                    showDefine={true}
+                  />
+                );
+              })}
             </AnimatePresence>
             
             {filteredVerbs.length === 0 && (

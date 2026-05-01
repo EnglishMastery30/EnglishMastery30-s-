@@ -88,7 +88,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
       
       if (drillType === 'rearrangement') {
         const response = await generateContentWithFallback(ai, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           contents: `Generate a single, grammatically correct English sentence for a language learner (${difficulty} level). The sentence should be 5-10 words long. Return ONLY the sentence, nothing else. Do not include quotes.`,
         });
         
@@ -125,7 +125,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
         `;
         
         const response = await generateContentWithFallback(ai, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -167,7 +167,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
         `;
         
         const response = await generateContentWithFallback(ai, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -415,7 +415,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
           If they spoke it, also evaluate if it sounds like a valid pronunciation/interpretation of the target words, and provide specific pronunciation feedback.
           If it is incorrect, provide specific feedback focusing on word order and verb conjugation.
           Suggest alternative valid sentences if the user's answer is close but not perfect.
-          Also, provide a clear explanation of the grammar rules involved in this sentence structure.
+          Also, provide a clear explanation of the grammar rules involved in this sentence structure. As part of the explanation, include a side-by-side comparison of an unnatural (but technically correct) sentence versus a natural-sounding version related to this grammar point. Add a short note explaining why the natural version works better. Use decimal points to format this comparison (e.g., 1.1 Unnatural: [sentence], 1.2 Natural: [sentence], 1.3 Note: [explanation]).
           
           Return a JSON object with this exact structure:
           {
@@ -428,7 +428,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
         `;
         
         const response = await generateContentWithFallback(ai, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -474,7 +474,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
           
           Evaluate if the user's answer is correct or acceptable in this context.
           If they spoke it, also evaluate if it sounds like a valid pronunciation/interpretation of the target words, and provide specific pronunciation feedback.
-          Provide a clear explanation of the grammar rule that applies here.
+          Provide a clear explanation of the grammar rule that applies here. As part of the explanation, include a side-by-side comparison of an unnatural (but technically correct) sentence versus a natural-sounding version related to this grammar point. Add a short note explaining why the natural version works better. Use decimal points to format this comparison (e.g., 1.1 Unnatural: [sentence], 1.2 Natural: [sentence], 1.3 Note: [explanation]).
           Explain why "${state.correctAnswer}" is correct, and if the user was wrong, briefly explain why "${answer}" doesn't fit.
           
           Return a JSON object with this exact structure:
@@ -487,7 +487,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
         `;
         
         const response = await generateContentWithFallback(ai, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-1.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -541,7 +541,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
 
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 sm:p-12 text-center max-w-2xl mx-auto">
           <Target className="w-16 h-16 text-indigo-500 mx-auto mb-6" />
-          <h3 className="text-[56px] font-['Times_New_Roman'] font-bold text-slate-900 dark:text-white mb-4 leading-tight">Select Difficulty</h3>
+          <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">Select Difficulty</h3>
           <p className="text-slate-500 dark:text-slate-400 mb-8">
             Choose your level before starting the drill. The AI will adapt the grammar rules and vocabulary to match your proficiency.
           </p>
@@ -913,10 +913,11 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
               <p className="text-sm text-slate-700 dark:text-slate-300 italic line-clamp-3">"{selectedText}"</p>
               <button 
                 onClick={() => playAudio(selectedText)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition-colors shrink-0"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-indigo-500 transition-colors shrink-0 flex items-center gap-1 border border-slate-200 dark:border-slate-700"
                 title="Listen to text"
               >
                 <Volume2 className="w-4 h-4" />
+                <span className="text-xs font-semibold">Listen</span>
               </button>
             </div>
             {!translation && !isTranslating && (
@@ -924,7 +925,7 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
                 onClick={translateSelectedText}
                 className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium transition-colors"
               >
-                Translate to {language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : language === 'ar' ? 'Arabic' : language === 'hi' ? 'Hindi' : language === 'ja' ? 'Japanese' : 'your language'}
+                Translate to {language === 'es' ? 'Spanish' : language === 'fr' ? 'French' : language === 'ar' ? 'Arabic' : language === 'hi' ? 'Hindi' : 'your language'}
               </button>
             )}
             {isTranslating && (
@@ -935,6 +936,22 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
             {translation && (
               <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">
                 <p className="text-sm font-medium text-slate-900 dark:text-white">{translation}</p>
+                <div className="mt-2 flex">
+                  <button
+                    onClick={() => {
+                      if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(translation);
+                        utterance.lang = language === 'ja' ? 'ja-JP' : language === 'ko' ? 'ko-KR' : language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : language === 'fr' ? 'fr-FR' : language === 'de' ? 'de-DE' : language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : language === 'ta' ? 'ta-IN' : language === 'kn' ? 'kn-IN' : language === 'ml' ? 'ml-IN' : language === 'ar' ? 'ar-SA' : 'en-US';
+                        window.speechSynthesis.speak(utterance);
+                      }
+                    }}
+                    className="p-1 rounded text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center"
+                    title="Listen to Translation"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
           </motion.div>

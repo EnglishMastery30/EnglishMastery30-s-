@@ -122,7 +122,7 @@ export function DailyTalk({ isLocked = false }: { isLocked?: boolean }) {
       }));
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: contents,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,

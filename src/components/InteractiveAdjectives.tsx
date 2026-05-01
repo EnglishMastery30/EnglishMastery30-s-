@@ -1,29 +1,83 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ArrowRight, BookOpen } from 'lucide-react';
+import { Sparkles, ArrowRight, BookOpen, Volume2, FileText } from 'lucide-react';
 
 interface AdjectiveDegree {
   positive: string;
   comparative: string;
   superlative: string;
-  telugu: string;
+  definition: string;
+  ipa?: {
+    positive: string;
+    comparative: string;
+    superlative: string;
+  }
 }
 
 const ADJECTIVE_DATA: AdjectiveDegree[] = [
-  { positive: 'Rich', comparative: 'Richer', superlative: 'Richest', telugu: 'ధనవంతుడు' },
-  { positive: 'Poor', comparative: 'Poorer', superlative: 'Poorest', telugu: 'పేదవాడు' },
-  { positive: 'Great', comparative: 'Greater', superlative: 'Greatest', telugu: 'గొప్ప' },
-  { positive: 'Small', comparative: 'Smaller', superlative: 'Smallest', telugu: 'చిన్న' },
-  { positive: 'Tall', comparative: 'Taller', superlative: 'Tallest', telugu: 'పొడవైన' },
-  { positive: 'Short', comparative: 'Shorter', superlative: 'Shortest', telugu: 'పొట్టి' },
-  { positive: 'Kind', comparative: 'Kinder', superlative: 'Kindest', telugu: 'దయగల' },
-  { positive: 'Strong', comparative: 'Stronger', superlative: 'Strongest', telugu: 'బలమైన' },
-  { positive: 'Weak', comparative: 'Weaker', superlative: 'Weakest', telugu: 'బలహీనమైన' },
-  { positive: 'Bright', comparative: 'Brighter', superlative: 'Brightest', telugu: 'ప్రకాశవంతమైన' }
+  { 
+    positive: 'Rich', comparative: 'Richer', superlative: 'Richest', 
+    definition: 'Having a lot of money or valuable possessions.',
+    ipa: { positive: '/rɪtʃ/', comparative: '/ˈrɪtʃər/', superlative: '/ˈrɪtʃɪst/' } 
+  },
+  { 
+    positive: 'Poor', comparative: 'Poorer', superlative: 'Poorest', 
+    definition: 'Lacking sufficient money to live at a standard considered comfortable.',
+    ipa: { positive: '/pʊr/', comparative: '/ˈpʊrər/', superlative: '/ˈpʊrɪst/' } 
+  },
+  { 
+    positive: 'Great', comparative: 'Greater', superlative: 'Greatest', 
+    definition: 'Of an extent, amount, or intensity considerably above the normal or average.',
+    ipa: { positive: '/ɡreɪt/', comparative: '/ˈɡreɪtər/', superlative: '/ˈɡreɪtɪst/' } 
+  },
+  { 
+    positive: 'Small', comparative: 'Smaller', superlative: 'Smallest', 
+    definition: 'Less than normal in size, amount, or intensity.',
+    ipa: { positive: '/smɔl/', comparative: '/ˈsmɔlər/', superlative: '/ˈsmɔlɪst/' } 
+  },
+  { 
+    positive: 'Tall', comparative: 'Taller', superlative: 'Tallest', 
+    definition: 'Great or more than average height.',
+    ipa: { positive: '/tɔl/', comparative: '/ˈtɔlər/', superlative: '/ˈtɔlɪst/' } 
+  },
+  { 
+    positive: 'Short', comparative: 'Shorter', superlative: 'Shortest', 
+    definition: 'Measuring a small distance from end to end.',
+    ipa: { positive: '/ʃɔrt/', comparative: '/ˈʃɔrtər/', superlative: '/ˈʃɔrtɪst/' } 
+  },
+  { 
+    positive: 'Kind', comparative: 'Kinder', superlative: 'Kindest', 
+    definition: 'Having or showing a friendly, generous, and considerate nature.',
+    ipa: { positive: '/kaɪnd/', comparative: '/ˈkaɪndər/', superlative: '/ˈkaɪndɪst/' } 
+  },
+  { 
+    positive: 'Strong', comparative: 'Stronger', superlative: 'Strongest', 
+    definition: 'Having the power to move heavy weights or perform other physically demanding tasks.',
+    ipa: { positive: '/strɔŋ/', comparative: '/ˈstrɔŋər/', superlative: '/ˈstrɔŋɪst/' } 
+  },
+  { 
+    positive: 'Weak', comparative: 'Weaker', superlative: 'Weakest', 
+    definition: 'Lacking the power to perform physically demanding tasks; lacking strength.',
+    ipa: { positive: '/wik/', comparative: '/ˈwikər/', superlative: '/ˈwikɪst/' } 
+  },
+  { 
+    positive: 'Bright', comparative: 'Brighter', superlative: 'Brightest', 
+    definition: 'Giving out or reflecting a lot of light; shining.',
+    ipa: { positive: '/braɪt/', comparative: '/ˈbraɪtər/', superlative: '/ˈbraɪtɪst/' } 
+  }
 ];
 
 export function InteractiveAdjectives() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const playAudio = (text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <div className="my-12 space-y-10">
@@ -51,7 +105,6 @@ export function InteractiveAdjectives() {
             }`}
           >
             <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{adj.positive}</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">{adj.telugu}</span>
           </motion.button>
         ))}
       </div>
@@ -70,12 +123,34 @@ export function InteractiveAdjectives() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-900/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl pointer-events-none" />
 
             <div className="bg-white dark:bg-slate-950 rounded-[30px] p-8 sm:p-12">
+              <div className="mb-10 text-center">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg border border-amber-100 dark:border-amber-500/20 mb-4">
+                  <FileText className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Definition</span>
+                </div>
+                <p className="text-xl font-medium text-slate-800 dark:text-slate-200">
+                  {ADJECTIVE_DATA[selectedIndex].definition}
+                </p>
+              </div>
+
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-16">
                 
                 <div className="flex flex-col items-center gap-4 group">
-                    <div className="text-[11px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-[0.2em] mb-2">Positive</div>
+                    <div className="text-[11px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-center relative w-full">
+                        <span>Positive</span>
+                        <div className="absolute -right-12 flex items-center gap-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); playAudio(ADJECTIVE_DATA[selectedIndex].positive); }}
+                            className="p-1.5 text-amber-500 bg-amber-50 dark:bg-amber-500/10 rounded-full hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                    </div>
                     <div className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform">{ADJECTIVE_DATA[selectedIndex].positive}</div>
-                    <div className="text-sm font-medium text-slate-400 bg-slate-50 dark:bg-slate-900 px-4 py-1.5 rounded-full border border-slate-100 dark:border-slate-800 mt-2">{ADJECTIVE_DATA[selectedIndex].telugu}</div>
+                    {ADJECTIVE_DATA[selectedIndex].ipa && (
+                        <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">{ADJECTIVE_DATA[selectedIndex].ipa.positive}</div>
+                    )}
                 </div>
 
                 <div className="hidden md:flex flex-col items-center">
@@ -83,9 +158,22 @@ export function InteractiveAdjectives() {
                 </div>
 
                 <div className="flex flex-col items-center gap-4 group">
-                    <div className="text-[11px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.2em] mb-2">Comparative</div>
+                    <div className="text-[11px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-center relative w-full">
+                        <span>Comparative</span>
+                        <div className="absolute -right-12 flex items-center gap-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); playAudio(ADJECTIVE_DATA[selectedIndex].comparative); }}
+                            className="p-1.5 text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                    </div>
                     <div className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform">{ADJECTIVE_DATA[selectedIndex].comparative}</div>
-                    <div className="text-xs font-bold text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 px-3 py-1 rounded-lg mt-2">v1 + -er</div>
+                    {ADJECTIVE_DATA[selectedIndex].ipa && (
+                        <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">{ADJECTIVE_DATA[selectedIndex].ipa.comparative}</div>
+                    )}
+                    <div className="text-xs font-bold text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 px-3 py-1 rounded-lg mt-1">v1 + -er</div>
                 </div>
 
                 <div className="hidden md:flex flex-col items-center">
@@ -93,9 +181,22 @@ export function InteractiveAdjectives() {
                 </div>
 
                 <div className="flex flex-col items-center gap-4 group">
-                    <div className="text-[11px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-2">Superlative</div>
+                    <div className="text-[11px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center justify-center relative w-full">
+                        <span>Superlative</span>
+                        <div className="absolute -right-12 flex items-center gap-1">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); playAudio(ADJECTIVE_DATA[selectedIndex].superlative); }}
+                            className="p-1.5 text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                    </div>
                     <div className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter group-hover:scale-110 transition-transform">{ADJECTIVE_DATA[selectedIndex].superlative}</div>
-                    <div className="text-xs font-bold text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 px-3 py-1 rounded-lg mt-2">v1 + -est</div>
+                    {ADJECTIVE_DATA[selectedIndex].ipa && (
+                        <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">{ADJECTIVE_DATA[selectedIndex].ipa.superlative}</div>
+                    )}
+                    <div className="text-xs font-bold text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 px-3 py-1 rounded-lg mt-1">v1 + -est</div>
                 </div>
 
               </div>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, HelpCircle, Mic, MicOff, Lock } from 'lucide-react';
+import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, ArrowRight, Mic, MicOff, Lock, Volume2 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { generateContentWithFallback } from '../utils/aiFallback';
 import { useCredits } from '../contexts/CreditsContext';
@@ -17,6 +17,11 @@ const SYSTEM_INSTRUCTION = `You are an expert polyglot language tutor powered by
 
 ## Supported Languages
 You support EVERY human language.
+
+## Tone Guidelines for AI Feedback
+- Always favor natural-sounding, constructive, and specific feedback.
+- Prefer contractions (e.g., "don't", "I'll") over formal equivalents in your own conversational responses.
+- When evaluating the user, highlight places where they could use hedging or softening phrases (e.g., "I'm not entirely sure") to sound more natural, polite, or professional.
 
 ## Before Starting
 Determine these essentials (ask if not provided):
@@ -206,7 +211,7 @@ function GrammarDrill({ messages }: { messages: Message[] }) {
         .join('\n');
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: `Generate a grammar drill for a student learning ${language}. 
 Base the drill on the grammar rules or vocabulary recently discussed in this conversation context (if any):
 """
@@ -300,7 +305,7 @@ Return JSON:
       if (!apiKey) throw new Error("API key is missing.");
       const ai = new GoogleGenAI({ apiKey });
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: `Evaluate the user's answer for the grammar drill in ${language}.
 Task: ${drill.task}
 Correct Answer: ${drill.correctAnswer}
@@ -348,7 +353,25 @@ Return a JSON object:
           <div className="space-y-6">
             <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-100 dark:border-slate-700">
               <p className="text-lg font-medium text-slate-900 dark:text-white mb-2">{drill.task}</p>
-              {drill.translation && <p className="text-sm text-slate-500 dark:text-slate-400 italic">{drill.translation}</p>}
+              {drill.translation && (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 italic">{drill.translation}</p>
+                  <button
+                    onClick={() => {
+                      if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(drill.translation || '');
+                        utterance.lang = language === 'ja' ? 'ja-JP' : language === 'ko' ? 'ko-KR' : language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : language === 'fr' ? 'fr-FR' : language === 'de' ? 'de-DE' : language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : language === 'ta' ? 'ta-IN' : language === 'kn' ? 'kn-IN' : language === 'ml' ? 'ml-IN' : language === 'ar' ? 'ar-SA' : 'en-US';
+                        window.speechSynthesis.speak(utterance);
+                      }
+                    }}
+                    className="p-1 rounded text-indigo-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center shrink-0"
+                    title="Listen to Translation"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {drill.type === 'fill-in-the-blank' ? (
@@ -540,7 +563,7 @@ Keep your responses appropriate for their level.
 Include English translations in parentheses for difficult words if they are beginner/intermediate.`;
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: prompt
       });
       
@@ -603,7 +626,7 @@ Format your response clearly using Markdown, for example:
       }));
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents: contents,
         config: {
           systemInstruction
@@ -872,7 +895,7 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
       }));
 
       const response = await generateContentWithFallback(ai, {
-        model: isAdvanced ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview',
+        model: isAdvanced ? 'gemini-1.5-pro' : 'gemini-1.5-flash',
         contents: contents,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
@@ -920,7 +943,7 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
               className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
               title="Show Tutorial"
             >
-              <HelpCircle className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => setIsAdvanced(!isAdvanced)}
@@ -976,7 +999,7 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
               className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
               title="Show Tutorial"
             >
-              <HelpCircle className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => setIsAdvanced(!isAdvanced)}

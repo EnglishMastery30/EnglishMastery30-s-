@@ -28,11 +28,13 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const MAX_INPUT_LENGTH = 1000;
   const [isAdvanced, setIsAdvanced] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<{url: string, type: string, file: File, base64: string} | null>(null);
   const [viewingAttachment, setViewingAttachment] = useState<{url: string, type: string} | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -43,8 +45,22 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
   }, [messages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isOpen]);
+
+  const handleClearHistory = () => {
+    if (window.confirm("Are you sure you want to clear your chat history?")) {
+      const initial = [{ id: '1', role: 'model', text: 'Hi! I am your AI English Assistant. How can I help you today?' } as Message];
+      setMessages(initial);
+      localStorage.setItem('chatbot_messages', JSON.stringify(initial));
+    }
+  };
+
+  const handleTextSelection = (e: React.MouseEvent) => {
+    // Selection translation removed
+  };
 
   const toggleListening = async () => {
     if (isListening) {
@@ -169,7 +185,7 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
       });
 
       const response = await generateContentWithFallback(ai, {
-        model: isAdvanced ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview',
+        model: isAdvanced ? 'gemini-1.5-pro' : 'gemini-1.5-flash',
         contents: contents,
         config: {
           systemInstruction: 'You are a helpful English language learning assistant. Answer questions about grammar, vocabulary, pronunciation, and general English usage clearly and concisely. Provide gentle, contextual corrections for the user\'s pronunciation and grammar mistakes during the conversation. Always prompt the user to repeat the correct phrase after providing a correction.',
@@ -181,12 +197,24 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
         role: 'model', 
         text: response.text || 'Sorry, I could not generate a response.' 
       }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
+      let errorMessage = 'Sorry, there was an error connecting to the AI. Please try again later.';
+      
+      if (error.message?.includes('API key')) {
+        errorMessage = 'Your Gemini API key is missing or invalid. Please check your settings.';
+      } else if (error.message?.includes('safety')) {
+        errorMessage = 'I cannot respond to this message due to safety filters. Please try rephrasing.';
+      } else if (error.message?.includes('quota') || error.message?.includes('429')) {
+        errorMessage = 'AI quota exceeded. Please wait a moment or switch to your own API key.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
       setMessages(prev => [...prev, { 
         id: (Date.now() + 1).toString(), 
         role: 'model', 
-        text: 'Sorry, there was an error connecting to the AI. Please try again later.' 
+        text: errorMessage
       }]);
     } finally {
       setIsLoading(false);
@@ -240,7 +268,38 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
               </div>
             )}
 
-            <div className={`flex flex-col h-full ${viewingAttachment ? 'w-1/2' : 'w-full'}`}>
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) {
+                  const input = { target: { files: [file] } } as any;
+                  handleFileChange(input);
+                }
+              }}
+              className={`flex flex-col h-full ${viewingAttachment ? 'w-1/2' : 'w-full'} relative`}
+            >
+              <AnimatePresence>
+                {isDragging && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[60] bg-indigo-600/20 backdrop-blur-sm border-2 border-dashed border-indigo-600 flex items-center justify-center rounded-2xl m-2"
+                  >
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-2">
+                      <Paperclip className="w-10 h-10 text-indigo-600 animate-bounce" />
+                      <p className="font-bold text-slate-800 dark:text-white">Drop file to attach</p>
+                      <p className="text-xs text-slate-500">Max size: 5MB</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Header */}
               <div className="p-4 bg-indigo-600 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
@@ -248,6 +307,13 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
                 <h3 className="font-semibold">AI Assistant</h3>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={handleClearHistory}
+                  className="p-1 hover:bg-indigo-700 rounded-md transition-colors"
+                  title="Clear Chat History"
+                >
+                  <Trash2 className="w-4 h-4 text-indigo-200" />
+                </button>
                 <button
                   onClick={() => setIsAdvanced(!isAdvanced)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -384,7 +450,7 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
                   ref={fileInputRef} 
                   onChange={handleFileChange} 
                   className="hidden" 
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,audio/*,application/pdf,text/plain"
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -404,14 +470,21 @@ export function Chatbot({ isLocked = false }: { isLocked?: boolean }) {
                 >
                   {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask a question..."
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white transition-all outline-none min-w-0"
-                />
+                <div className="flex-1 flex flex-col relative">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder="Ask a question..."
+                    className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white transition-all outline-none"
+                  />
+                  {input.length > MAX_INPUT_LENGTH * 0.8 && (
+                    <span className={`absolute -top-6 right-0 text-[10px] font-bold ${input.length >= MAX_INPUT_LENGTH ? 'text-rose-500' : 'text-slate-400'}`}>
+                      {input.length}/{MAX_INPUT_LENGTH}
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={handleSend}
                   disabled={(!input.trim() && !attachment) || isLoading}

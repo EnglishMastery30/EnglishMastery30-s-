@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Info } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface Definition {
   term: string;
@@ -90,7 +90,7 @@ export function SmartHighlight({ text, highlightedTerms = [], topic }: SmartHigh
               onMouseEnter={() => setActiveTerm(part + i)}
               onMouseLeave={() => setActiveTerm(null)}
             >
-              <span className={`cursor-help font-bold border-b-2 transition-all duration-300 ${
+              <span className={`cursor-pointer font-bold border-b-2 transition-all duration-300 ${
                 type === 'adjective' ? 'text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-700 decoration-wavy' :
                 type === 'verb' ? 'text-emerald-600 border-emerald-400 dark:text-emerald-400 dark:border-emerald-700' :
                 type === 'pronoun' ? 'text-purple-600 border-purple-400 dark:text-purple-400 dark:border-purple-700' :
@@ -115,7 +115,7 @@ export function SmartHighlight({ text, highlightedTerms = [], topic }: SmartHigh
                         type === 'important' || isTopicKeyword ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40' :
                         'bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20'
                       }`}>
-                        <Info className="w-4 h-4" />
+                        <ArrowRight className="w-4 h-4 rotate-90" />
                       </div>
                       <div>
                         <h5 className="font-bold text-sm text-slate-900 dark:text-white capitalize mb-1 flex items-center gap-2">

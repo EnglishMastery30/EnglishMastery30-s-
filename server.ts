@@ -141,8 +141,10 @@ async function startServer() {
     } catch (err: any) {
       console.error("Razorpay error:", err);
       
+      const errorMsg = err?.error?.description || err?.description || err?.message || JSON.stringify(err);
+      
       // If authentication fails (invalid keys), fallback to mock order
-      if (err && err.error && err.error.description === 'Authentication failed') {
+      if (typeof errorMsg === 'string' && (errorMsg.includes('Authentication failed') || errorMsg.includes('BAD_REQUEST_ERROR') || errorMsg.includes('invalid api key'))) {
         const { amount, currency = 'INR', receipt } = req.body;
         return res.json({
           id: `order_mock_${Date.now()}`,
@@ -155,7 +157,7 @@ async function startServer() {
         });
       }
       
-      res.status(500).json({ error: err.error?.description || err.message || 'Payment initiation failed' });
+      res.status(500).json({ error: errorMsg });
     }
   });
 

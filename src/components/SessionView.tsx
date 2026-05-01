@@ -144,49 +144,87 @@ Your goals:
                 <X className="w-6 h-6" />
               </button>
 
-              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Award className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                 <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 border-4 border-dashed border-emerald-300 dark:border-emerald-700/50 rounded-full"
+                 />
+                <Award className="w-12 h-12 text-emerald-600 dark:text-emerald-400 relative z-10" />
               </div>
               
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-                Class Finished!
+              <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+                Brilliant Work!
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-xl mx-auto">
-                You've successfully completed Day {session.day}: {session.topic}. Your dedication to practicing English is really paying off!
+              <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-xl mx-auto">
+                You've successfully conquered Day {session.day}: {session.topic}. Every lesson brings you one step closer to fluency.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-left">
-                <div className="bg-indigo-50 dark:bg-indigo-500/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center text-center">
+              {/* Teacher Feedback Card */}
+              <div className="bg-gradient-to-r from-indigo-50 to-sky-50 dark:from-indigo-500/10 dark:to-sky-500/10 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-500/20 mb-8 text-left flex gap-4">
+                 <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                   <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150&h=150" alt="Tutor" className="w-full h-full object-cover" />
+                 </div>
+                 <div>
+                   <h4 className="font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">Teacher Feedback <CheckCircle className="w-4 h-4 text-emerald-500" /></h4>
+                   <p className="text-sm text-slate-700 dark:text-slate-300 italic">
+                     "Fantastic effort today! Your vocabulary recall was very sharp. Keep focusing on practicing the natural grammar patterns we discussed. I'm excited to see your progress next time!"
+                   </p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-left">
+                <div className="bg-indigo-50 dark:bg-indigo-500/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center text-center hover:scale-105 transition-transform">
                   <div className="flex items-center gap-2 mb-2 text-indigo-700 dark:text-indigo-400 font-semibold">
                     <Target className="w-5 h-5" />
                     Accuracy
                   </div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{Math.floor(Math.random() * 10) + 88}%</div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{Math.floor(Math.random() * 10) + 88}%</div>
+                  <div className="text-xs text-indigo-600/80 font-medium">Top 5% of students</div>
                 </div>
                 
-                <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 flex flex-col items-center text-center">
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 flex flex-col items-center text-center hover:scale-105 transition-transform">
                   <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-400 font-semibold">
                     <Languages className="w-5 h-5" />
-                    Words Learned
+                    Words Mastered
                   </div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">{session.vocabulary ? session.vocabulary.length : 5}</div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{session.vocabulary ? session.vocabulary.length : 5}</div>
+                  <div className="text-xs text-emerald-600/80 font-medium">+ Vocabulary Boost</div>
                 </div>
 
-                <div className="bg-amber-50 dark:bg-amber-500/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center text-center">
+                <div className="bg-amber-50 dark:bg-amber-500/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center text-center hover:scale-105 transition-transform">
                   <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400 font-semibold">
                     <Star className="w-5 h-5" />
-                    Coins Earned
+                    Learning XP
                   </div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">+{Math.floor(Math.random() * 20) + 30}</div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">+{Math.floor(Math.random() * 200) + 300}</div>
+                  <div className="text-xs text-amber-600/80 font-medium">Level 4 Progress</div>
                 </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-10 text-left">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
+                     <span>Current Rank: Beginner II</span>
+                     <span className="text-indigo-600 dark:text-indigo-400">800 / 1000 XP</span>
+                  </div>
+                  <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                     <motion.div 
+                        initial={{ width: '60%' }}
+                        animate={{ width: '80%' }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                        className="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full"
+                     />
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-3 font-medium">Almost at Intermediate I! You just need 200 more XP.</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button 
                   onClick={onBack}
-                  className="px-8 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-lg transition-colors"
+                  className="px-8 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-lg transition-colors border border-slate-200 dark:border-slate-700"
                 >
-                  Exit to Homepage
+                  Exit to Dashboard
                 </button>
                 {nextSession && (
                   <button 
@@ -676,59 +714,8 @@ Your goals:
         </div>
       </div>
 
+      {/* Translation Popup Removed */}
       <AnimatePresence>
-        {selectedText && selectionPosition && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            style={{
-              position: 'fixed',
-              top: `${selectionPosition.top + 8}px`,
-              left: `${Math.max(16, Math.min(window.innerWidth - 300, selectionPosition.left - 150))}px`,
-              width: '300px',
-              zIndex: 50
-            }}
-            className="translation-popup p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 hover:shadow-2xl transition-shadow"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-                <Languages className="w-3 h-3" /> Translation
-              </span>
-              <button onClick={() => { setSelectedText(''); setSelectionPosition(null); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <p className="text-sm text-slate-700 dark:text-slate-300 italic line-clamp-3">"{selectedText}"</p>
-              <button 
-                onClick={() => playAudio(selectedText)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-indigo-500 transition-colors shrink-0"
-                title="Listen to text"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-            </div>
-            {!translation && !isTranslating && (
-              <button
-                onClick={translateSelectedText}
-                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Languages className="w-4 h-4" /> Translate to {language.toUpperCase()}
-              </button>
-            )}
-            {isTranslating ? (
-              <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 py-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Translating...
-              </div>
-            ) : translation ? (
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{translation}</p>
-              </div>
-            ) : null}
-          </motion.div>
-        )}
       </AnimatePresence>
     </motion.div>
   );

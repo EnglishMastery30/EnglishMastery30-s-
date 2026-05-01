@@ -78,7 +78,7 @@ export function InviteBanner() {
         </div>
         <button
           onClick={handleCopy}
-          className="shrink-0 flex items-center gap-2 px-6 py-3 bg-white text-orange-600 rounded-xl font-bold hover:bg-orange-50 transition-colors shadow-xl"
+          className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto bg-white text-orange-600 rounded-xl font-bold hover:bg-orange-50 transition-colors shadow-xl"
         >
           {copied ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
           {copied ? 'Copied!' : 'Copy Invite Link'}

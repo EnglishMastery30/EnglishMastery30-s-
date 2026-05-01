@@ -29,8 +29,18 @@ export function SubscriptionManagement({ onBack }: { onBack: () => void }) {
       }
     }
 
-    const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
-    setPaymentHistory(history);
+    try {
+      const historyStr = localStorage.getItem('paymentHistory');
+      if (historyStr) {
+        const history = JSON.parse(historyStr);
+        if (Array.isArray(history)) {
+          setPaymentHistory(history);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse payment history", e);
+      setPaymentHistory([]);
+    }
 
     const notifications = localStorage.getItem('emailNotifications');
     if (notifications !== null) {

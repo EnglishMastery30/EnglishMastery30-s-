@@ -1734,6 +1734,24 @@ Q: How many apples do we need?
 A: We need at least six.
 `;
 
+export const peopleAndPlacesDayTen = `
+🔸 Subject: Describing Physical Appearance
+🔹 DEFINITION
+When describing people, we use adjectives to talk about their physical qualities like height, build, and features.
+
+🔹 COMPARING TWO ITEMS
+To compare two people or things, use **Comparative Adjectives**. 
+For short words, we usually add "-er". For long words, we use "more" + adjective.
+• "John is **taller than** his older brother." (Comparing height)
+• "She is **younger than** her cousin." (Comparing age)
+• "He looks **stronger than** he did last year." (Comparing build)
+• "This new building is **more modern than** the old one." (Comparing places)
+
+🔸 Subject: Compare Adjectives
+🔹 INTERACTIVE DEGREES
+[INTERACTIVE_ADJECTIVES]
+`;
+
 export const usedToDayTwentyThree = `
 🔸 Subject: I / We / You / They / He / She / It
 🔹 USED TO (Past Habit)

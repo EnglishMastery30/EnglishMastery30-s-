@@ -16,35 +16,35 @@ export const curriculum: DaySession[] = [
   {
     day: 1,
     level: "Beginner",
-    topic: "Introductions & Greetings",
-    description: "Learn to introduce yourself and greet others naturally.",
-    example: "Hello, how are you today?",
-    youtubeLink: "https://www.youtube.com/results?search_query=learn+english+Learn%20to%20introduce",
+    topic: "Basic Vocabulary & Expressions",
+    description: "Learn to introduce simple concepts and everyday phrases.",
+    example: "This is a book. I like to read.",
+    youtubeLink: "https://www.youtube.com/results?search_query=learn+english+basic+vocabulary",
     goals: [
-      "Say hello and goodbye",
+      "Say simple everyday phrases",
       "Share your name and where you are from",
-      "Ask basic \"How are you?\" questions",
-      "Use formal and informal greetings appropriately"
+      "Ask basic common questions",
+      "Use formal and informal expressions appropriately"
     ],
-    pronunciationNotes: "Focus on clear vowel sounds in \"Hello\" and \"How\". Pay attention to the rising intonation in questions.",
+    pronunciationNotes: "Focus on clear vowel sounds in 'This' and 'Book'. Pay attention to the rising intonation in questions.",
     vocabulary: [
       {
-        word: "Introduce",
-        pronunciation: "/ˌɪntrəˈdjuːs/",
-        meaning: "To tell someone another person's name",
-        exampleSentence: "Let me introduce my friend to you."
+        word: "Everyday",
+        pronunciation: "/ˈɛvriˌdeɪ/",
+        meaning: "Happening or used every day; daily.",
+        exampleSentence: "These are everyday phrases."
       },
       {
-        word: "Greeting",
-        pronunciation: "/ˈɡriːtɪŋ/",
-        meaning: "A polite word or sign of welcome",
-        exampleSentence: "A warm greeting is important."
+        word: "Vocabulary",
+        pronunciation: "/vəʊˈkæbjʊləri/",
+        meaning: "The body of words used in a particular language.",
+        exampleSentence: "I am expanding my vocabulary."
       },
       {
-        word: "Pleasure",
-        pronunciation: "/ˈplɛʒər/",
-        meaning: "A feeling of happy satisfaction and enjoyment",
-        exampleSentence: "It's a pleasure to meet you."
+        word: "Basic",
+        pronunciation: "/ˈbeɪsɪk/",
+        meaning: "Forming an essential foundation or starting point.",
+        exampleSentence: "We are learning basic words."
       }
     ],
     grammarExample: {
@@ -53,9 +53,9 @@ export const curriculum: DaySession[] = [
       note: "Using 'I\\'m [Name]' and 'It\\'s nice to meet you' sounds more conversational and relaxed than formal schoolbook phrases."
     },
     speakingPrompts: [
-      "Introduce yourself to a new colleague.",
-      "Greet your friend you haven't seen in a year.",
-      "Roleplay meeting your neighbor for the first time."
+      "Say 3 basic objects around you.",
+      "Ask a simple question to a friend.",
+      "Use one of your new vocabulary words in a sentence."
     ]
   },
   {
@@ -397,7 +397,7 @@ export const curriculum: DaySession[] = [
   {
     day: 10,
     level: "Beginner",
-    topic: "Describing People & Places",
+    topic: "People & Places",
     description: "Use adjectives to describe the world around you.",
     example: "My hometown is very quiet and peaceful.",
     youtubeLink: "https://www.youtube.com/results?search_query=learn+english+Use%20adjectives%20to",

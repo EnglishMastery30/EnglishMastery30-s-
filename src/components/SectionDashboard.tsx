@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Activity, Target, Brain, Sparkles, CheckCircle, Clock, BookOpen } from 'lucide-react';
 import { sectionExamples } from '../data/sectionExamples';
@@ -16,7 +17,7 @@ export function SectionDashboard({ sectionName, onBack, isLocked = false }: Sect
       practiceCount: 14,
       progressPercent: 65,
       tips: [
-        { title: 'Focus Area 1', desc: 'Practice your basic greetings in front of a mirror to build confidence.' },
+        { title: 'Focus Area 1', desc: 'Practice your basic vocabulary in front of a mirror to build confidence.' },
         { title: 'Focus Area 2', desc: 'Try to use the new vocabulary words in simple sentences throughout your day.' },
         { title: 'Focus Area 3', desc: 'Listen to native speakers and try to mimic their intonation on simple phrases.' }
       ],
@@ -91,7 +92,7 @@ export function SectionDashboard({ sectionName, onBack, isLocked = false }: Sect
       practiceCount: 12,
       progressPercent: 35,
       tips: [
-        { title: 'Focus Area 1', desc: 'Practice using formal greetings and sign-offs in emails and meetings.' },
+        { title: 'Focus Area 1', desc: 'Practice using formal business phrases and sign-offs in emails and meetings.' },
         { title: 'Focus Area 2', desc: 'Learn common business idioms to sound more natural in a corporate setting.' },
         { title: 'Focus Area 3', desc: 'Work on your presentation skills, focusing on clear transitions between topics.' }
       ],
@@ -105,6 +106,10 @@ export function SectionDashboard({ sectionName, onBack, isLocked = false }: Sect
 
   const data = sectionData[sectionName] || sectionData['Daily Conversation'];
   const { accuracyScore, practiceCount, progressPercent, tips, history } = data;
+
+  const [showAllExamples, setShowAllExamples] = useState(false);
+  const examples = sectionExamples[sectionName] || [];
+  const displayedExamples = showAllExamples ? examples : examples.slice(0, 10);
 
   return (
     <motion.div 
@@ -213,14 +218,31 @@ export function SectionDashboard({ sectionName, onBack, isLocked = false }: Sect
       </div>
 
       {/* Examples Section */}
-      {sectionExamples[sectionName] && (
-        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-indigo-500" />
-            50 Examples for {sectionName}
-          </h3>
+      {examples.length > 0 && (
+        <div id="examples-section" className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-indigo-500" />
+              Practice Examples for {sectionName}
+            </h3>
+            {examples.length > 10 && (
+              <button 
+                onClick={() => {
+                  setShowAllExamples(!showAllExamples);
+                  if (!showAllExamples) {
+                     setTimeout(() => {
+                        document.getElementById('examples-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                     }, 100);
+                  }
+                }}
+                className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
+              >
+                {showAllExamples ? 'Show Less' : 'View All'}
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sectionExamples[sectionName].map((example, i) => (
+            {displayedExamples.map((example: string, i: number) => (
               <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 flex items-start gap-3">
                 <span className="text-indigo-500 font-bold text-sm mt-0.5">{i + 1}.</span>
                 <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{example}</p>
@@ -232,3 +254,4 @@ export function SectionDashboard({ sectionName, onBack, isLocked = false }: Sect
     </motion.div>
   );
 }
+

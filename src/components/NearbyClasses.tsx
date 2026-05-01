@@ -45,8 +45,8 @@ export function NearbyClasses({ isLocked = false }: { isLocked?: boolean }) {
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await generateContentWithFallback(ai, {
-        model: "gemini-3-flash-preview",
-        contents: "Find the best spoken English course classes, language schools, or English tutors near my current location. Provide a helpful summary of the options.",
+        model: "gemini-1.5-flash",
+        contents: "Find the best spoken English course classes, language schools, or English tutors near my current location and also reputable world-renowned English classes or online certifications. Provide a helpful summary of both local and world-class options.",
         config: {
           tools: [{ googleMaps: {} }],
           toolConfig: {
@@ -87,8 +87,8 @@ export function NearbyClasses({ isLocked = false }: { isLocked?: boolean }) {
             <MapPin className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Nearby English Classes</h2>
-            <p className="text-slate-600 dark:text-slate-400">Find spoken English courses and tutors in your local area using Google Maps.</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">World & Nearby English Classes</h2>
+            <p className="text-slate-600 dark:text-slate-400">Discover top-rated local language schools and world-renowned English certification centers.</p>
           </div>
         </div>
 

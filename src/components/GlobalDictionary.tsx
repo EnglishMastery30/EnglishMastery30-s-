@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Book, X, Loader2, Volume2 } from 'lucide-react';
+import { ArrowRight, X, Loader2, Volume2 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { generateContentWithFallback } from '../utils/aiFallback';
 import { useCredits } from '../contexts/CreditsContext';
@@ -12,6 +12,7 @@ interface DictionaryResult {
   description: string;
   pronunciation?: string;
   examples: string[];
+  translation?: string;
 }
 
 export function GlobalDictionary() {
@@ -22,7 +23,7 @@ export function GlobalDictionary() {
   const [error, setError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const { apiKeys } = useCredits();
-  const { language } = useLanguage();
+  const { language, targetLanguage } = useLanguage();
 
   useEffect(() => {
     const handleMouseUp = (e: MouseEvent) => {
@@ -40,8 +41,8 @@ export function GlobalDictionary() {
       }
 
       const text = selection.toString().trim();
-      // Only trigger for single words or short phrases (max 3 words)
-      if (text && text.split(/\s+/).length <= 3 && text.length < 30) {
+      // Increase limit to handle generic translations
+      if (text && text.length > 0 && text.length < 200) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         
@@ -75,20 +76,26 @@ export function GlobalDictionary() {
       
       const ai = new GoogleGenAI({ apiKey });
       
-      const prompt = `You are a helpful dictionary assistant. Provide the definition for the word or phrase: "${word}".
-      The user's preferred language code is "${language}". Please provide the "meaning" and "description" translated into this language, but keep the "word" and "examples" in the original language (English).
+      const translationLang = language === 'en' ? targetLanguage : language;
+      const prompt = `You are a helpful dictionary and translation assistant. The user has selected the following text: "${word}".
+      The user's preferred language code for UI is "${language}". 
+      The user's native/target language for translation is "${translationLang}".
+      
+      If the text is a sentence, provide a clear explanation and translation.
+      
       Return the response as a JSON object with the following structure:
       {
-        "word": "The word or phrase",
+        "word": "The original text",
         "pronunciation": "Phonetic pronunciation (optional)",
-        "meaning": "A concise, clear meaning (in language: ${language})",
-        "description": "A slightly longer description or context of how it's used (in language: ${language})",
+        "meaning": "A concise, clear meaning or summary (in language: ${language})",
+        "description": "A description or context (in language: ${language})",
+        "translation": "A direct translation into (language: ${translationLang})",
         "examples": ["Example sentence 1", "Example sentence 2"]
       }
       Ensure the response is valid JSON.`;
 
       const response = await generateContentWithFallback(ai, {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -132,7 +139,7 @@ export function GlobalDictionary() {
         >
           <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-500/5">
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-              <Book className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
               <span className="font-semibold text-sm">Dictionary</span>
             </div>
             <button 
@@ -168,10 +175,11 @@ export function GlobalDictionary() {
                     </h3>
                     <button 
                       onClick={() => playAudio(result.word)}
-                      className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
+                      className="flex items-center gap-1 p-1.5 px-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors shadow-sm"
                       title="Listen"
                     >
                       <Volume2 className="w-4 h-4" />
+                      <span className="text-xs font-semibold">Listen</span>
                     </button>
                   </div>
                   {result.pronunciation && (
@@ -187,6 +195,32 @@ export function GlobalDictionary() {
                     {result.meaning}
                   </p>
                 </div>
+
+                {result.translation && (
+                  <div className="bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
+                    <h4 className="text-xs font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider mb-1">Translation</h4>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-indigo-700 dark:text-indigo-300 font-bold">
+                        {result.translation}
+                      </p>
+                      <button
+                        onClick={() => {
+                          if ('speechSynthesis' in window) {
+                            window.speechSynthesis.cancel();
+                            const langToUse = language === 'ja' ? 'ja-JP' : language === 'ko' ? 'ko-KR' : language === 'zh' ? 'zh-CN' : language === 'es' ? 'es-ES' : language === 'fr' ? 'fr-FR' : language === 'de' ? 'de-DE' : language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : language === 'ta' ? 'ta-IN' : language === 'kn' ? 'kn-IN' : language === 'ml' ? 'ml-IN' : language === 'ar' ? 'ar-SA' : 'en-US';
+                            const utterance = new SpeechSynthesisUtterance(result.translation);
+                            utterance.lang = langToUse;
+                            window.speechSynthesis.speak(utterance);
+                          }
+                        }}
+                        className="p-1 rounded text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center shrink-0"
+                        title="Listen to Translation"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Description</h4>

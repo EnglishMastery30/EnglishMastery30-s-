@@ -113,7 +113,7 @@ export const UniversalQuestionDiagram: React.FC<UniversalQuestionDiagramProps> =
                      <span className="text-slate-500 font-serif text-lg">{verbFormSymbol}</span>
                    )}
                 </div>
-                <div className="text-6xl absolute -right-8 top-1/2 -translate-y-1/2 font-serif text-slate-800 dark:text-slate-100">?</div>
+                <div className="text-4xl absolute -right-10 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 opacity-50"><ArrowRight className="w-12 h-12" /></div>
              </div>
              {/* Invisible spacer to match the "Who" block at the bottom */}
              <div className="h-16 mt-4"></div>

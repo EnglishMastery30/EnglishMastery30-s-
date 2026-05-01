@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Loader2, CheckCircle, Zap, Calendar, Award } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, Zap, Calendar, Award, ArrowRight } from 'lucide-react';
 import { useCredits } from '../contexts/CreditsContext';
 
 const PLANS = [
   { id: 'trial', name: '1 Day Free', price: 0, duration: 1, icon: Zap, description: 'Try all premium features free for 1 day.' },
-  { id: '1_month', name: 'Update to Premium', price: 129, duration: 30, icon: Calendar, description: 'Perfect for short-term intensive learning.' },
-  { id: '6_months', name: '6 Months', price: 499, duration: 180, icon: Award, description: 'Great value for steady progress.', popular: true },
-  { id: '1_year', name: '1 Year', price: 899, duration: 365, icon: CheckCircle, description: 'Best value for complete mastery.' }
+  { id: '1_month', name: 'Premium (1 Month)', price: 129, duration: 30, icon: Calendar, description: 'Perfect for short-term intensive learning.' },
+  { id: 'pro_to_premium', name: 'Pro to Premium Upgrade', price: 299, duration: 180, icon: Award, description: 'Upgrade your existing Pro plan to Premium.', popular: true },
+  { id: '1_year', name: 'Premium (1 Year)', price: 899, duration: 365, icon: CheckCircle, description: 'Best value for complete mastery.' }
 ];
 
 export function PremiumUpgrade() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [premiumExpiry, setPremiumExpiry] = useState<number | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('pro_to_premium');
   const { addCredits } = useCredits();
 
   const [isPlacardLoading, setIsPlacardLoading] = useState(false);
@@ -43,7 +44,10 @@ export function PremiumUpgrade() {
     };
   }, []);
 
-  const handlePayment = async (plan: typeof PLANS[0]) => {
+  const handlePayment = async () => {
+    const plan = PLANS.find(p => p.id === selectedPlanId);
+    if (!plan) return;
+
     if (plan.price === 0) {
       const trialUsed = localStorage.getItem('trialUsed');
       if (trialUsed) {
@@ -55,7 +59,14 @@ export function PremiumUpgrade() {
       localStorage.setItem('trialUsed', 'true');
       localStorage.setItem('subscriptionPlan', plan.name);
 
-      const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+      const historyStr = localStorage.getItem('paymentHistory');
+      let history = [];
+      try {
+        history = JSON.parse(historyStr || '[]');
+        if (!Array.isArray(history)) history = [];
+      } catch (e) {
+        history = [];
+      }
       history.unshift({
         id: `trial_${Date.now()}`,
         date: Date.now(),
@@ -108,7 +119,14 @@ export function PremiumUpgrade() {
         localStorage.setItem('premiumUntil', expiry.toString());
         localStorage.setItem('subscriptionPlan', plan.name);
         
-        const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+        const historyStr = localStorage.getItem('paymentHistory');
+        let history = [];
+        try {
+          history = JSON.parse(historyStr || '[]');
+          if (!Array.isArray(history)) history = [];
+        } catch (e) {
+          history = [];
+        }
         history.unshift({
           id: `pay_mock_${Date.now()}`,
           date: Date.now(),
@@ -130,8 +148,8 @@ export function PremiumUpgrade() {
         key: order.key_id, // Key ID returned from backend
         amount: order.amount,
         currency: order.currency,
-        name: "English Mastery 30",
-        description: `${plan.name} Premium Subscription`,
+        name: "English Mastery",
+        description: `${plan.name} Subscription`,
         order_id: order.id,
         handler: function (response: any) {
           // Payment successful
@@ -140,7 +158,14 @@ export function PremiumUpgrade() {
           localStorage.setItem('subscriptionPlan', plan.name);
           
           // Save payment history
-          const history = JSON.parse(localStorage.getItem('paymentHistory') || '[]');
+          const historyStr = localStorage.getItem('paymentHistory');
+          let history = [];
+          try {
+            history = JSON.parse(historyStr || '[]');
+            if (!Array.isArray(history)) history = [];
+          } catch (e) {
+            history = [];
+          }
           history.unshift({
             id: response.razorpay_payment_id || `pay_${Date.now()}`,
             date: Date.now(),
@@ -155,10 +180,12 @@ export function PremiumUpgrade() {
           setPremiumExpiry(expiry);
           
           // Add credits based on plan
-          if (plan.id === 'monthly') {
+          if (plan.id === '1_month') {
             addCredits(1000);
-          } else if (plan.id === 'yearly') {
+          } else if (plan.id === '1_year') {
             addCredits(15000);
+          } else if (plan.id === 'pro_to_premium') {
+            addCredits(5000);
           }
           
           window.dispatchEvent(new CustomEvent('premiumUpdated', { detail: expiry }));
@@ -170,7 +197,7 @@ export function PremiumUpgrade() {
           contact: "9999999999"
         },
         theme: {
-          color: "#4f46e5"
+          color: "#3b82f6"
         }
       };
 
@@ -193,8 +220,10 @@ export function PremiumUpgrade() {
     }
   };
 
+  const selectedPlan = PLANS.find(p => p.id === selectedPlanId);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {isPremium && premiumExpiry && (
         <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between mb-8">
           <div className="flex items-center justify-between w-full">
@@ -208,76 +237,89 @@ export function PremiumUpgrade() {
             </div>
             <button
               onClick={() => {
-                console.log("Premium placard button clicked");
                 setIsPlacardLoading(true);
                 setTimeout(() => setIsPlacardLoading(false), 1500);
               }}
               disabled={isPlacardLoading}
-              aria-label="Manage Premium Settings"
-              aria-busy={isPlacardLoading}
               className="ml-4 flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white font-bold text-lg px-4 py-2 rounded-xl transition-all hover:scale-105 disabled:opacity-70 disabled:hover:scale-100"
             >
-              {isPlacardLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : "Manage"}
+              {isPlacardLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Manage"}
             </button>
           </div>
         </div>
       )}
 
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Upgrade to Premium</h2>
-        <p className="text-slate-600 dark:text-slate-400">Unlock unlimited AI conversations, advanced pronunciation analysis, and more.</p>
+      <div className="text-center space-y-2 mb-8">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Upgrade to Premium</h2>
+        <p className="text-base text-slate-600 dark:text-slate-400">Unlock unlimited AI conversations, advanced pronunciation analysis, and more.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANS.map((plan) => {
           const Icon = plan.icon;
+          const isSelected = selectedPlanId === plan.id;
+          
           return (
             <div 
               key={plan.id} 
-              className={`relative bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 flex flex-col ${
-                plan.popular ? 'border-indigo-500 shadow-indigo-100 dark:shadow-indigo-900/20 shadow-xl' : 'border-slate-200 dark:border-slate-700 shadow-sm'
+              onClick={() => setSelectedPlanId(plan.id)}
+              className={`relative rounded-2xl p-6 border-2 flex flex-col cursor-pointer transition-all duration-200 transform ${
+                isSelected 
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg shadow-blue-500/20 scale-105 z-10' 
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-md'
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  MOST POPULAR
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 text-white text-[10px] font-bold tracking-widest px-3 py-1 rounded-full uppercase ${isSelected ? 'bg-blue-500' : 'bg-slate-900 dark:bg-slate-700'}`}>
+                  Most Popular
                 </div>
               )}
+              
               <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2 rounded-lg ${plan.popular ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                <div className={`p-2 rounded-xl ${isSelected ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white">{plan.name}</h3>
+                <h3 className={`font-semibold ${isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>{plan.name}</h3>
               </div>
+              
               <div className="mb-4">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">
+                <span className={`text-3xl font-bold tracking-tight ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
                   {plan.price === 0 ? 'Free' : `₹${plan.price}`}
                 </span>
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 flex-1">
+              
+              <p className={`text-sm font-medium flex-1 ${isSelected ? 'text-blue-700/80 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>
                 {plan.description}
               </p>
-              <button
-                onClick={() => handlePayment(plan)}
-                disabled={loadingPlan !== null}
-                className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${
-                  plan.popular 
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white'
-                } disabled:opacity-70`}
-              >
-                {loadingPlan === plan.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : plan.price === 0 ? (
-                  'Start Free Trial'
-                ) : (
-                  'Upgrade Now'
-                )}
-              </button>
+              
+              {/* Radio button indicator */}
+              <div className="mt-4 flex items-center justify-end">
+                <div className={`w-5 h-5 flex items-center justify-center rounded-full border-2 ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-300 dark:border-slate-600 bg-transparent'}`}>
+                  {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
+
+      <div className="mt-12 flex justify-center">
+        <button
+          onClick={handlePayment}
+          disabled={loadingPlan !== null}
+          className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-bold transition-all hover:scale-105 shadow-xl shadow-blue-500/20 disabled:opacity-70 disabled:hover:scale-100"
+        >
+          {loadingPlan ? (
+            <Loader2 className="w-6 h-6 animate-spin" />
+          ) : (
+            <>
+              Continue with {selectedPlan?.name}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
+

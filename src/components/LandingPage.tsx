@@ -9,29 +9,76 @@ export function LandingPage({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       {/* Navigation */}
-      <nav className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center">
-            <Mic className="w-6 h-6 text-white" />
+      <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+        <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center transition-transform hover:rotate-12">
+              <Mic className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-2xl tracking-tighter dark:text-white leading-none">English Master</span>
+                <span className="font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-white tracking-widest leading-none">RRR</span>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 tracking-widest uppercase mt-0.5">Read, Repeat, Respond.</span>
+            </div>
           </div>
-          <span className="font-bold text-2xl tracking-tight dark:text-white">English Mastery 30</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
-          <button 
-            onClick={onLogin}
-            className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium transition-colors"
-          >
-            {t('landing.login')}
-          </button>
-          <button 
-            onClick={onLogin}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
-          >
-            {t('landing.getStarted')}
-          </button>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <button 
+              onClick={onLogin}
+              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium transition-colors"
+            >
+              {t('landing.login')}
+            </button>
+            <button 
+              onClick={onLogin}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors"
+            >
+              {t('landing.getStarted')}
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* Methodology Section */}
+      <section className="bg-white dark:bg-slate-900 py-24 border-y border-slate-100 dark:border-slate-800">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-sm font-black text-indigo-600 dark:text-indigo-400 tracking-[0.3em] uppercase">The Methodology</h2>
+            <p className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">Read, Repeat, Respond.</p>
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium">
+              Our unique RRR framework is designed to bridge the gap between knowing English and speaking it fluently.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 transition-all hover:scale-105 group">
+              <div className="w-16 h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black text-3xl mb-6 shadow-lg shadow-indigo-200 dark:shadow-none group-hover:rotate-6 transition-transform">R</div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Read</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                Consume high-quality content that matches your level. Expand your vocabulary and understand structure through immersive reading sessions.
+              </p>
+            </div>
+            
+            <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 transition-all hover:scale-105 group">
+              <div className="w-16 h-16 bg-purple-600 text-white rounded-2xl flex items-center justify-center font-black text-3xl mb-6 shadow-lg shadow-purple-200 dark:shadow-none group-hover:rotate-6 transition-transform">R</div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Repeat</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                Reinforce what you learn through AI-assisted repetition. Perfect your pronunciation and internalize common patterns until they become automatic.
+              </p>
+            </div>
+            
+            <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 transition-all hover:scale-105 group">
+              <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center font-black text-3xl mb-6 shadow-lg shadow-emerald-200 dark:shadow-none group-hover:rotate-6 transition-transform">R</div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Respond</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                Apply your skills in real-time AI conversations. Learn to think on your feet and respond naturally to unexpected questions and scenarios.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto px-4 pt-20 pb-32">

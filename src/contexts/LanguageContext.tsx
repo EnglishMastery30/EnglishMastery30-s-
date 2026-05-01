@@ -1,6 +1,30 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Language = 'en' | 'te' | 'hi' | 'ta' | 'kn' | 'ml' | 'es' | 'fr' | 'ar' | 'ja';
+export type Language = 'en' | 'te' | 'hi' | 'ta' | 'kn' | 'ml' | 'es' | 'fr' | 'ar' | 'ja' | 'ko' | 'zh' | 'de' | 'mr' | 'bn' | 'gu' | 'pa' | 'ur' | 'it' | 'pt' | 'ru';
+
+export const voiceMap: Record<Language, string> = {
+  en: 'en-US',
+  te: 'te-IN',
+  hi: 'hi-IN',
+  ta: 'ta-IN',
+  kn: 'kn-IN',
+  ml: 'ml-IN',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  ar: 'ar-SA',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  zh: 'zh-CN',
+  de: 'de-DE',
+  mr: 'mr-IN',
+  bn: 'bn-IN',
+  gu: 'gu-IN',
+  pa: 'pa-IN',
+  ur: 'ur-PK',
+  it: 'it-IT',
+  pt: 'pt-PT',
+  ru: 'ru-RU'
+};
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
@@ -23,6 +47,27 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.notifications': 'Notifications',
     'profile.darkMode': 'Dark Mode',
     'profile.signOut': 'Sign Out',
+    'def.noun': 'Names of people, places, things, or ideas.',
+    'def.pronoun': 'Words that replace nouns (e.g., He, She, It).',
+    'def.verb': 'Action words or states of being.',
+    'def.adjective': 'Words that describe nouns.',
+    'def.adverb': 'Words that describe verbs, adjectives, or other adverbs.',
+    'def.preposition': 'Words showing relationships in space or time.',
+    'def.conjunction': 'Words that connect other words or clauses.',
+    'def.interjection': 'Words expressing strong emotion.',
+    'mastery.knownToUnknown': 'Known to Unknown',
+    'mastery.vocabSubtitle': 'Discover and practice words based on parts of speech',
+    'mastery.vocabulary': 'Vocabulary',
+    'mastery.vocabDesc': 'Words naming people, places, things, or ideas.',
+    'mastery.relationships': 'Relationships',
+    'mastery.relDesc': 'Words describing social or familial connections.',
+    'mastery.showRandom': 'Show Random Words',
+    'practice.dashboard': 'Practice Dashboard',
+    'practice.selectDay': 'Select a day to begin your practice.',
+    'practice.identifyWords': 'Identify the Part of Speech',
+    'practice.whatType': 'What type of word is this?',
+    'practice.score': 'Score',
+    'common.reset': 'Reset',
   },
   te: {
     'nav.dashboard': 'డ్యాష్‌బోర్డ్',
@@ -44,6 +89,27 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.notifications': 'నోటిఫికేషన్‌లు',
     'profile.darkMode': 'డార్క్ మోడ్',
     'profile.signOut': 'సైన్ అవుట్',
+    'def.noun': 'వ్యక్తులు, స్థలాలు, వస్తువులు లేదా ఆలోచనల పేర్లు.',
+    'def.pronoun': 'నామవాచకాలను భర్తీ చేసే పదాలు (ఉదా., అతడు, ఆమె, ఇది).',
+    'def.verb': 'చర్య పదాలు లేదా స్థితిని తెలిపేవి.',
+    'def.adjective': 'నామవాచకాలను వివరించే పదాలు.',
+    'def.adverb': 'క్రియలు, విశేషణాలు లేదా ఇతర క్రియావిశేషణాలను వివరించే పదాలు.',
+    'def.preposition': 'స్థలము లేదా కాలములోని సంబంధాలను చూపే పదాలు.',
+    'def.conjunction': 'ఇతర పదాలు లేదా వాక్యాలను కలిపే పదాలు.',
+    'def.interjection': 'బలమైన భావోద్వేగాన్ని వ్యక్తపరిచే పదాలు.',
+    'mastery.knownToUnknown': 'తెలిసిన వాటి నుండి తెలియని వాటికి',
+    'mastery.vocabSubtitle': 'పదభాగాల ఆధారంగా పదాలను అన్వేషించండి మరియు అభ్యసించండి',
+    'mastery.vocabulary': 'పదసంపద (Vocabulary)',
+    'mastery.vocabDesc': 'వ్యక్తులు, ప్రదేశాలు, వస్తువులు లేదా ఆలోచనలకు పేరు పెట్టే పదాలు.',
+    'mastery.relationships': 'సంబంధాలు (Relationships)',
+    'mastery.relDesc': 'సామాజిక లేదా ఇల్లు సంబంధాలను వివరించే పదాలు.',
+    'mastery.showRandom': 'యాదృచ్ఛిక పదాలను చూపించండి',
+    'practice.dashboard': 'ప్రాక్టీస్ డ్యాష్‌బోర్డ్',
+    'practice.selectDay': 'మీ ప్రాక్టీస్ ప్రారంభించడానికి ఒక రోజును ఎంచుకోండి.',
+    'practice.identifyWords': 'భాషా భాగాలను గుర్తించండి',
+    'practice.whatType': 'ఇది ఏ రకమైన పదం?',
+    'practice.score': 'స్కోరు',
+    'common.reset': 'రీసెట్',
   },
   hi: {
     'nav.dashboard': 'डैशबोर्ड',
@@ -65,6 +131,21 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.notifications': 'सूचनाएं',
     'profile.darkMode': 'डार्क मोड',
     'profile.signOut': 'साइन आउट',
+    'def.noun': 'लोगों, स्थानों, चीजों या विचारों के नाम।',
+    'def.pronoun': 'संज्ञा के स्थान पर आने वाले शब्द (जैसे, वह, यह)।',
+    'def.verb': 'क्रिया या होने की स्थिति बताने वाले शब्द।',
+    'def.adjective': 'संज्ञा की विशेषता बताने वाले शब्द।',
+    'def.adverb': 'क्रिया, विशेषण या अन्य क्रियाविशेषण की विशेषता बताने वाले शब्द।',
+    'def.preposition': 'स्थान या समय में संबंध दिखाने वाले शब्द।',
+    'def.conjunction': 'अन्य शब्दों या वाक्यों को जोड़ने वाले शब्द।',
+    'def.interjection': 'तीव्र भावना व्यक्त करने वाले शब्द।',
+    'mastery.knownToUnknown': 'ज्ञात से अज्ञात',
+    'mastery.vocabSubtitle': 'शब्द प्रयोग के आधार पर शब्दों को खोजें और अभ्यास करें',
+    'mastery.vocabulary': 'शब्दावली (Vocabulary)',
+    'mastery.vocabDesc': 'लोगों, स्थानों, चीजों या विचारों के नाम बताने वाले शब्द।',
+    'mastery.relationships': 'संबंध (Relationships)',
+    'mastery.relDesc': 'सामाजिक या पारिवारिक संबंधों का वर्णन करने वाले शब्द।',
+    'mastery.showRandom': 'कुछ और शब्द दिखाएं',
   },
   ta: {
     'nav.dashboard': 'டாஷ்போர்டு',
@@ -196,14 +277,14 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.dashboard': 'ダッシュボード',
     'nav.curriculum': 'カリキュラム',
     'nav.reports': 'レポート',
-    'nav.admin': '管理',
+    'nav.admin': '管理者',
     'nav.profile': 'プロフィール',
     'landing.login': 'ログイン',
-    'landing.getStarted': 'はじめる',
-    'landing.title1': '30日で英会話を',
-    'landing.title2': 'マスターする',
-    'landing.subtitle': '高度なAIチューターと実生活の会話を練習しましょう。インタラクティブな毎日のセッションを通じて自信をつけ、発音を改善します。',
-    'landing.startLearning': '今すぐ学習を始める',
+    'landing.getStarted': '今すぐ開始',
+    'landing.title1': '30日間で',
+    'landing.title2': '英会話をマスター',
+    'landing.subtitle': 'AI講師とリアルな会話を練習。自信を高め、発音を改善し、語彙を増やしましょう。',
+    'landing.startLearning': '今すぐ学習を開始',
     'landing.downloadApp': 'アプリをダウンロード',
     'profile.title': 'プロフィール',
     'profile.subscription': 'サブスクリプション',
@@ -212,12 +293,245 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.notifications': '通知',
     'profile.darkMode': 'ダークモード',
     'profile.signOut': 'サインアウト',
+  },
+  ko: {
+    'nav.dashboard': '대시보드',
+    'nav.curriculum': '커리큘럼',
+    'nav.reports': '보고서',
+    'nav.admin': '관리자',
+    'nav.profile': '프로필',
+    'landing.login': '로그인',
+    'landing.getStarted': '시작하기',
+    'landing.title1': '30일 만에',
+    'landing.title2': '생활 영어 마스터',
+    'landing.subtitle': 'AI 튜터와 실제 대화를 연습하세요. 자신감을 갖고 발음을 교정하며 어휘를 확장하세요.',
+    'landing.startLearning': '지금 학습 시작',
+    'landing.downloadApp': '앱 다운로드',
+    'profile.title': '프로필',
+    'profile.subscription': '구독',
+    'profile.preferences': '설정',
+    'profile.languageSettings': '언어 설정',
+    'profile.notifications': '알림',
+    'profile.darkMode': '다크 모드',
+    'profile.signOut': '로그아웃',
+  },
+  zh: {
+    'nav.dashboard': '控制面板',
+    'nav.curriculum': '课程',
+    'nav.reports': '报告',
+    'nav.admin': '管理员',
+    'nav.profile': '个人资料',
+    'landing.login': '登录',
+    'landing.getStarted': '开始使用',
+    'landing.title1': '30天精通',
+    'landing.title2': '英语口语',
+    'landing.subtitle': '与先进的 AI 导师练习真实对话。通过每日互动提高信心和发音。',
+    'landing.startLearning': '立即开始学习',
+    'landing.downloadApp': '下载应用',
+    'profile.title': '个人资料',
+    'profile.subscription': '订阅',
+    'profile.preferences': '偏好',
+    'profile.languageSettings': '语言设置',
+    'profile.notifications': '通知',
+    'profile.darkMode': '深色模式',
+    'profile.signOut': '登出',
+  },
+  de: {
+    'nav.dashboard': 'Dashboard',
+    'nav.curriculum': 'Lehrplan',
+    'nav.reports': 'Berichte',
+    'nav.admin': 'Admin',
+    'nav.profile': 'Profil',
+    'landing.login': 'Anmelden',
+    'landing.getStarted': 'Loslegen',
+    'landing.title1': 'Meistern Sie Englisch',
+    'landing.title2': 'in 30 Tagen',
+    'landing.subtitle': 'Üben Sie reale Gespräche mit einem KI-Tutor. Bauen Sie Selbstvertrauen auf.',
+    'landing.startLearning': 'Jetzt lernen',
+    'landing.downloadApp': 'App herunterladen',
+    'profile.title': 'Profil',
+    'profile.subscription': 'Abonnement',
+    'profile.preferences': 'Einstellungen',
+    'profile.languageSettings': 'Spracheinstellungen',
+    'profile.notifications': 'Benachrichtigungen',
+    'profile.darkMode': 'Dunkelmodus',
+    'profile.signOut': 'Abmelden',
+  },
+  mr: {
+    'nav.dashboard': 'डॅशबोर्ड',
+    'nav.curriculum': 'अभ्यासक्रम',
+    'nav.reports': 'अहवाल',
+    'nav.admin': 'प्रशासक',
+    'nav.profile': 'प्रोफाइल',
+    'landing.login': 'लॉगिन',
+    'landing.getStarted': 'सुरू करा',
+    'landing.title1': 'इंग्रजी बोलायला शिका',
+    'landing.title2': '३० दिवसात',
+    'landing.subtitle': 'AI शिक्षकासोबत दररोज इंग्रजी बोलण्याचा सराव करा.',
+    'landing.startLearning': 'आता शिकायला सुरुवात करा',
+    'landing.downloadApp': 'अॅप डाउनलोड करा',
+    'profile.title': 'प्रोफाइल',
+    'profile.subscription': 'सबस्क्रिप्शन',
+    'profile.preferences': 'पसंती',
+    'profile.languageSettings': 'भाषा सेटिंग्ज',
+    'profile.notifications': 'सूचना',
+    'profile.darkMode': 'डार्क मोड',
+    'profile.signOut': 'साइन आउट',
+  },
+  bn: {
+    'nav.dashboard': 'ড্যাশবোর্ড',
+    'nav.curriculum': 'পাঠ্যক্রম',
+    'nav.reports': 'রিপোর্ট',
+    'nav.admin': 'অ্যাডমিন',
+    'nav.profile': 'প্রোফাইল',
+    'landing.login': 'লগইন',
+    'landing.getStarted': 'শুরু করুন',
+    'landing.title1': '৩০ দিনে',
+    'landing.title2': 'ইংরেজি কথোপকথন শিখুন',
+    'landing.subtitle': 'AI শিক্ষকের সাথে প্রতিদিন ইংরেজি বলার অনুশীলন করুন।',
+    'landing.startLearning': 'এখনই শিখতে শুরু করুন',
+    'landing.downloadApp': 'অ্যাপ ডাউনলোড করুন',
+    'profile.title': 'প্রোফাইল',
+    'profile.subscription': 'সাবস্ক্রিপশন',
+    'profile.preferences': 'পছন্দ',
+    'profile.languageSettings': 'ভাষা সেটিংস',
+    'profile.notifications': 'নোটিফিকেশন',
+    'profile.darkMode': 'ডার্ক মোড',
+    'profile.signOut': 'সাইন আউট',
+  },
+  gu: {
+    'nav.dashboard': 'ડેશબોર્ડ',
+    'nav.curriculum': 'અભ્યાસક્રમ',
+    'nav.reports': 'રિપોર્ટસ',
+    'nav.admin': 'એડમિન',
+    'nav.profile': 'પ્રોફાઇલ',
+    'landing.login': 'લોગિન',
+    'landing.getStarted': 'શરૂ કરો',
+    'landing.title1': '૩૦ દિવસમાં',
+    'landing.title2': 'અંગ્રેજી બોલતા શીખો',
+    'landing.subtitle': 'AI શિક્ષક સાથે દરરોજ અંગ્રેજી બોલવાની પ્રેક્ટિસ કરો.',
+    'landing.startLearning': 'હમણાં જ શીખવાનું શરૂ કરો',
+    'landing.downloadApp': 'એપ ડાઉનલોડ કરો',
+    'profile.title': 'પ્રોફાઇલ',
+    'profile.subscription': 'સબ્સ્ક્રિપ્શન',
+    'profile.preferences': 'પસંદગીઓ',
+    'profile.languageSettings': 'ભાષા સેટિંગ્સ',
+    'profile.notifications': 'સૂચનાઓ',
+    'profile.darkMode': 'ડાર્ક મોડ',
+    'profile.signOut': 'સાઇન આઉટ',
+  },
+  pa: {
+    'nav.dashboard': 'ਡੈਸ਼ਬੋਰਡ',
+    'nav.curriculum': 'ਪਾਠਕ੍ਰਮ',
+    'nav.reports': 'ਰਿਪੋਰਟਾਂ',
+    'nav.admin': 'ਐਡਮਿਨ',
+    'nav.profile': 'ਪ੍ਰੋਫਾਈਲ',
+    'landing.login': 'ਲੌਗਇਨ',
+    'landing.getStarted': 'ਸ਼ੁਰੂ ਕਰੋ',
+    'landing.title1': '30 ਦਿਨਾਂ ਵਿੱਚ',
+    'landing.title2': 'ਅੰਗਰੇਜ਼ੀ ਬੋਲਣੀ ਸਿੱਖੋ',
+    'landing.subtitle': 'AI ਅਧਿਆਪਕ ਨਾਲ ਰੋਜ਼ਾਨਾ ਅੰਗਰੇਜ਼ੀ ਬੋਲਣ ਦਾ ਅਭਿਆਸ ਕਰੋ।',
+    'landing.startLearning': 'ਹੁਣੇ ਸਿੱਖਣਾ ਸ਼ੁਰੂ ਕਰੋ',
+    'landing.downloadApp': 'ਐਪ ਡਾਊਨਲੋਡ ਕਰੋ',
+    'profile.title': 'ਪ੍ਰੋਫਾਈਲ',
+    'profile.subscription': 'ਸਬਸਕ੍ਰਿਪਸ਼ਨ',
+    'profile.preferences': 'ਤਰਜੀਹਾਂ',
+    'profile.languageSettings': 'ਭਾਸ਼ਾ ਸੈਟਿੰਗਾਂ',
+    'profile.notifications': 'ਸੂਚਨਾਵਾਂ',
+    'profile.darkMode': 'ਡਾਰਕ ਮੋਡ',
+    'profile.signOut': 'ਸਾਈਨ ਆਊਟ',
+  },
+  ur: {
+    'nav.dashboard': 'ڈیش بورڈ',
+    'nav.curriculum': 'نصاب',
+    'nav.reports': 'رپورٹس',
+    'nav.admin': 'ایڈمن',
+    'nav.profile': 'پروفائل',
+    'landing.login': 'لاگ ان',
+    'landing.getStarted': 'شروع کریں',
+    'landing.title1': '30 دنوں میں',
+    'landing.title2': 'انگریزی بولنا سیکھیں',
+    'landing.subtitle': 'AI ٹیوٹر کے ساتھ روزانہ انگریزی بولنے کی مشق کریں۔',
+    'landing.startLearning': 'ابھی سیکھنا شروع کریں',
+    'landing.downloadApp': 'ایپ ڈاؤن لوڈ کریں',
+    'profile.title': 'پروفائل',
+    'profile.subscription': 'سبسکرپشن',
+    'profile.preferences': 'ترجیحات',
+    'profile.languageSettings': 'زبان کی ترتیبات',
+    'profile.notifications': 'اطلاعات',
+    'profile.darkMode': 'ڈارک موڈ',
+    'profile.signOut': 'سائن آؤٹ',
+  },
+  it: {
+    'nav.dashboard': 'Dashboard',
+    'nav.curriculum': 'Curriculum',
+    'nav.reports': 'Rapporti',
+    'nav.admin': 'Admin',
+    'nav.profile': 'Profilo',
+    'landing.login': 'Accedi',
+    'landing.getStarted': 'Inizia',
+    'landing.title1': 'Impara l\'inglese',
+    'landing.title2': 'in 30 giorni',
+    'landing.subtitle': 'Pratica conversazioni reali con un tutor AI. Costruisci fiducia e migliora la pronuncia.',
+    'landing.startLearning': 'Inizia a imparare ora',
+    'landing.downloadApp': 'Scarica l\'App',
+    'profile.title': 'Profilo',
+    'profile.subscription': 'Abbonamento',
+    'profile.preferences': 'Preferenze',
+    'profile.languageSettings': 'Impostazioni lingua',
+    'profile.notifications': 'Notifiche',
+    'profile.darkMode': 'Modalità scura',
+    'profile.signOut': 'Esci',
+  },
+  pt: {
+    'nav.dashboard': 'Dashboard',
+    'nav.curriculum': 'Currículo',
+    'nav.reports': 'Relatórios',
+    'nav.admin': 'Admin',
+    'nav.profile': 'Perfil',
+    'landing.login': 'Entrar',
+    'landing.getStarted': 'Começar',
+    'landing.title1': 'Domine o inglês',
+    'landing.title2': 'em 30 dias',
+    'landing.subtitle': 'Pratique conversas reais com um tutor de IA avançado. Ganhe confiança e melhore a pronúncia.',
+    'landing.startLearning': 'Comece a aprender agora',
+    'landing.downloadApp': 'Baixar App',
+    'profile.title': 'Perfil',
+    'profile.subscription': 'Assinatura',
+    'profile.preferences': 'Preferências',
+    'profile.languageSettings': 'Configurações de idioma',
+    'profile.notifications': 'Notificações',
+    'profile.darkMode': 'Modo escuro',
+    'profile.signOut': 'Sair',
+  },
+  ru: {
+    'nav.dashboard': 'Панель управления',
+    'nav.curriculum': 'Учебный план',
+    'nav.reports': 'Отчеты',
+    'nav.admin': 'Админ',
+    'nav.profile': 'Профиль',
+    'landing.login': 'Войти',
+    'landing.getStarted': 'Начать',
+    'landing.title1': 'Освойте английский',
+    'landing.title2': 'за 30 дней',
+    'landing.subtitle': 'Практикуйте реальные разговоры с ИИ-репетитором. Обретите уверенность и улучшите произношение.',
+    'landing.startLearning': 'Начать обучение',
+    'landing.downloadApp': 'Скачать приложение',
+    'profile.title': 'Профиль',
+    'profile.subscription': 'Подписка',
+    'profile.preferences': 'Настройки',
+    'profile.languageSettings': 'Языковые настройки',
+    'profile.notifications': 'Уведомления',
+    'profile.darkMode': 'Темная тема',
+    'profile.signOut': 'Выйти',
   }
 };
 
 interface LanguageContextType {
   language: Language;
+  targetLanguage: Language;
   setLanguage: (lang: Language) => void;
+  setTargetLanguage: (lang: Language) => void;
   t: (key: string) => string;
   dir: 'ltr' | 'rtl';
 }
@@ -226,24 +540,43 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
+  const [targetLanguage, setTargetLanguage] = useState<Language>('te');
 
   useEffect(() => {
     // Auto-detect language on mount
     const browserLang = navigator.language.split('-')[0];
-    const supported: Language[] = ['en', 'te', 'hi', 'ta', 'kn', 'ml', 'es', 'fr', 'ar', 'ja'];
+    const supported: Language[] = ['en', 'te', 'hi', 'ta', 'kn', 'ml', 'es', 'fr', 'ar', 'ja', 'ko', 'zh', 'de', 'mr', 'bn', 'gu', 'pa', 'ur', 'it', 'pt', 'ru'];
     
     // Check localStorage first
     const savedLang = localStorage.getItem('app_language') as Language;
+    const savedTargetLang = localStorage.getItem('target_language') as Language;
+
     if (savedLang && supported.includes(savedLang)) {
       setLanguage(savedLang);
     } else if (supported.includes(browserLang as Language)) {
       setLanguage(browserLang as Language);
+    }
+
+    if (savedTargetLang && supported.includes(savedTargetLang)) {
+      setTargetLanguage(savedTargetLang);
+    } else {
+      // Default target to Telugu if UI is English, or match UI language
+      if (savedLang === 'en' || browserLang === 'en') {
+        setTargetLanguage('te');
+      } else {
+        setTargetLanguage((savedLang || (browserLang as Language)) || 'te');
+      }
     }
   }, []);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem('app_language', lang);
+  };
+
+  const handleSetTargetLanguage = (lang: Language) => {
+    setTargetLanguage(lang);
+    localStorage.setItem('target_language', lang);
   };
 
   const t = (key: string): string => {
@@ -258,7 +591,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [dir, language]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, dir }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      targetLanguage, 
+      setLanguage: handleSetLanguage, 
+      setTargetLanguage: handleSetTargetLanguage, 
+      t, 
+      dir 
+    }}>
       {children}
     </LanguageContext.Provider>
   );

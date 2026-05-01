@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { 
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { TrendingUp, Award, Calendar, Zap, MessageSquare, Target, Clock, Brain, Check, Smile, Activity, Mic, BookOpen, Lock, Star } from 'lucide-react';
+
+import { WordCard } from './WordCard';
 
 // Mock data to visualize the user's progress over the last 7 days
 const performanceData = [
@@ -48,6 +50,7 @@ const currentLevelIndex = 2; // 'Confident'
 export function ReportsView({ isLocked = false }: { isLocked?: boolean }) {
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [recentFeedback, setRecentFeedback] = useState<any[]>([]);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -367,9 +370,13 @@ export function ReportsView({ isLocked = false }: { isLocked?: boolean }) {
                   <p className="text-sm text-slate-700 dark:text-slate-300 italic mb-3">"{fb.text || 'No comment provided'}"</p>
                   <div className="flex flex-wrap gap-1">
                     {fb.keywords?.map((word: string) => (
-                      <span key={word} className="px-2 py-0.5 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded-md border border-slate-200 dark:border-slate-700 uppercase">
+                      <button 
+                        key={word} 
+                        onClick={() => setSelectedWord(word)}
+                        className="px-2 py-0.5 bg-white dark:bg-slate-800 text-[10px] font-bold text-slate-500 rounded-md border border-slate-200 dark:border-slate-700 uppercase hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      >
                         {word}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -383,6 +390,31 @@ export function ReportsView({ isLocked = false }: { isLocked?: boolean }) {
           </div>
         </div>
       </div>
+      
+      <AnimatePresence>
+        {selectedWord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedWord(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative z-10 w-full max-w-2xl"
+            >
+              <WordCard 
+                word={selectedWord} 
+                onClose={() => setSelectedWord(null)} 
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

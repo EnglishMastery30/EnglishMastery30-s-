@@ -5,9 +5,9 @@ A Noun is a word that names a person, place, thing, idea, or feeling. It is the 
 Examples include: John, London, Apple, Dog, Happiness.
 For instance: "The dog barked loudly." (dog is the noun)
 
-🔸 Subject: Interactive Vocabulary
-🔹 EXPLORE WORD FAMILIES
-[INTERACTIVE_WORDS]
+🔸 Subject: Interactive Nouns
+🔹 EXPLORE NOUN TYPES
+[INTERACTIVE_NOUNS]
 `;
 
 export const day45Content = `
@@ -37,21 +37,21 @@ For instance: "The sky is blue today." (is is the state of being)
 `;
 
 export const day47Content = `
-🔸 Subject: Definition
-🔹 DEFINITION
-An Adjective is a word that describes or modifies a noun or pronoun. It tells you what kind, how many, or which one.
-Examples include: Red, Beautiful, Tall, Energetic.
-For instance: "The red apple is sweet." (red and sweet are adjectives)
-
 🔸 Subject: Personality: Man
+🔹 DEFINITION
+Personality adjectives for men describe physical appearance, character, and traits that are traditionally used to characterize male individuals.
 🔹 MALE TRAITS
 [PERSONALITY_MAN]
 
 🔸 Subject: Personality: Woman
+🔹 DEFINITION
+Personality adjectives for women focus on appearance, charm, and character traits often used to describe female individuals in various contexts.
 🔹 FEMALE TRAITS
 [PERSONALITY_WOMAN]
 
 🔸 Subject: Personality: Child
+🔹 DEFINITION
+Personality adjectives for children describe their purity, cuteness, and behavioral traits that are characteristic of childhood.
 🔹 CHILD TRAITS
 [PERSONALITY_CHILD]
 
@@ -59,13 +59,49 @@ For instance: "The red apple is sweet." (red and sweet are adjectives)
 🔹 BEHAVIORAL TRAITS
 [CHARACTER_TRAIT]
 
-🔸 Subject: All Descriptive Adjectives
-🔹 COMPLETE LIST
-[OBJECTIVE_PERSONALITY]
+🔸 Subject: Voice
+🔹 AUDITORY TRAITS
+[PERSONALITY_VOICE]
 
-🔸 Subject: Degrees of Comparison
-🔹 MASTERY MODULE
-[INTERACTIVE_ADJECTIVES]
+🔸 Subject: Lips
+🔹 FACIAL FEATURES
+[PERSONALITY_LIPS]
+
+🔸 Subject: Vision
+🔹 VISUAL TRAITS
+[PERSONALITY_EYES]
+
+🔸 Subject: Pleasant Atmosphere
+🔹 ENVIRONMENTAL TRAITS
+[PERSONALITY_PLACE]
+
+🔸 Subject: Expression
+🔹 NON-VERBAL CUES
+[PERSONALITY_EXPRESSIONS]
+
+🔸 Subject: Food and Taste
+🔹 CULINARY TRAITS
+[PERSONALITY_FOOD]
+
+🔸 Subject: Hairstyle
+🔹 HAIR TRAITS
+[PERSONALITY_HAIR]
+
+🔸 Subject: Smile and Joy
+🔹 EMOTIONAL EXPRESSIONS
+[PERSONALITY_SMILE]
+
+🔸 Subject: Ears and Nose
+🔹 FACIAL FEATURES
+[PERSONALITY_EARS_NOSE]
+
+🔸 Subject: Skin and Glow
+🔹 DERMAL TRAITS
+[PERSONALITY_SKIN]
+
+🔸 Subject: Dress and Style
+🔹 APPAREL TRAITS
+[PERSONALITY_DRESS]
 `;
 
 export const day48Content = `
