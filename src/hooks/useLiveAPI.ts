@@ -11,6 +11,7 @@ export type TranscriptSegment = {
 export function useLiveAPI(systemInstruction: string, apiKey?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [volume, setVolume] = useState(0);
   const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
@@ -73,7 +74,7 @@ export function useLiveAPI(systemInstruction: string, apiKey?: string) {
             setIsConnecting(false);
             
             processorRef.current!.onaudioprocess = (e) => {
-              if (!isConnected) return;
+              if (!isConnected || isPaused) return;
 
               const inputData = e.inputBuffer.getChannelData(0);
               
@@ -234,6 +235,7 @@ export function useLiveAPI(systemInstruction: string, apiKey?: string) {
   }, [systemInstruction]);
 
   const disconnect = useCallback(() => {
+    setIsPaused(false);
     if (sessionRef.current) {
       sessionRef.current.then((session: any) => {
         try { session.close(); } catch (e) {}
@@ -270,14 +272,31 @@ export function useLiveAPI(systemInstruction: string, apiKey?: string) {
     setVolume(0);
   }, []);
 
+  const pause = useCallback(async () => {
+    if (audioContextRef.current && audioContextRef.current.state === 'running') {
+      await audioContextRef.current.suspend();
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resume = useCallback(async () => {
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+      setIsPaused(false);
+    }
+  }, []);
+
   return {
     isConnected,
     isConnecting,
+    isPaused,
     isProcessing,
     error,
     volume,
     transcripts,
     connect,
-    disconnect
+    disconnect,
+    pause,
+    resume
   };
 }

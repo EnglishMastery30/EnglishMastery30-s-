@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, ArrowRight, Mic, MicOff, Lock, Volume2 } from 'lucide-react';
+import { Send, Loader2, Brain, Sparkles, Zap, X, ChevronRight, ChevronLeft, Check, BookOpen, Target, MessageSquare, ArrowRight, Mic, MicOff, Lock, Volume2, RefreshCw, CheckCircle, TrendingUp } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { generateContentWithFallback } from '../utils/aiFallback';
 import { useCredits } from '../contexts/CreditsContext';
@@ -177,7 +177,7 @@ interface DrillData {
   explanation: string;
 }
 
-function GrammarDrill({ messages }: { messages: Message[] }) {
+function GrammarDrill({ messages, onGrammarDone }: { messages: Message[], onGrammarDone?: (isCorrect: boolean) => void }) {
   const { language } = useLanguage();
   const [drill, setDrill] = useState<DrillData | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
@@ -314,7 +314,7 @@ User's Answer: ${finalAnswer}
 Return a JSON object:
 {
   "isCorrect": boolean,
-  "explanation": "Brief feedback explaining why it is correct or incorrect, and the grammar rule."
+  "explanation": "If incorrect, provide a very detailed explanation of WHY it was wrong, what the common mistake is, and how to remember the correct way. If correct, provide a positive reinforcement message and a brief tip for even more natural expression."
 }`,
         config: {
           responseMimeType: "application/json",
@@ -322,6 +322,9 @@ Return a JSON object:
       });
       const data = JSON.parse(response.text || '{}');
       setFeedback(data);
+      if (onGrammarDone && typeof data.isCorrect === 'boolean') {
+        onGrammarDone(data.isCorrect);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -384,7 +387,7 @@ Return a JSON object:
                   onKeyDown={(e) => e.key === 'Enter' && !feedback && checkAnswer()}
                   disabled={!!feedback || isLoading}
                   placeholder="Type the missing word or phrase..."
-                  className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white transition-all outline-none disabled:opacity-50"
+                  className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-900 dark:text-white transition-all outline-none disabled:opacity-50"
                 />
               </div>
             ) : (
@@ -475,7 +478,7 @@ Return a JSON object:
   );
 }
 
-function ConversationPractice({ isLocked = false }: { isLocked?: boolean }) {
+function ConversationPractice({ isLocked = false, onVocabLearned }: { isLocked?: boolean, onVocabLearned?: (count: number) => void }) {
   const { language } = useLanguage();
   const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
   const [isSetup, setIsSetup] = useState(false);
@@ -633,6 +636,8 @@ Format your response clearly using Markdown, for example:
         }
       });
       
+      if (onVocabLearned) onVocabLearned(1);
+
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -671,7 +676,7 @@ Format your response clearly using Markdown, for example:
                 type="text" 
                 value={scenario}
                 onChange={e => setScenario(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-900 dark:text-white transition-all outline-none"
                 placeholder="e.g., Ordering at a restaurant"
               />
             </div>
@@ -680,7 +685,7 @@ Format your response clearly using Markdown, for example:
               <select 
                 value={level}
                 onChange={e => setLevel(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-900 dark:text-white transition-all outline-none"
               >
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
@@ -693,7 +698,7 @@ Format your response clearly using Markdown, for example:
                 type="text" 
                 value={goals}
                 onChange={e => setGoals(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white transition-all outline-none"
+                className="w-full bg-slate-100 dark:bg-slate-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-2.5 text-base sm:text-sm text-slate-900 dark:text-white transition-all outline-none"
                 placeholder="e.g., Improve fluency, learn slang"
               />
             </div>
@@ -786,8 +791,273 @@ Format your response clearly using Markdown, for example:
   );
 }
 
+type ViewMode = 'chat' | 'drill' | 'conversation' | 'flashcard';
+
+interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  hint?: string;
+  level: number; // For spaced repetition
+  nextReview: number;
+}
+
+interface DailyStats {
+  date: string;
+  wordsLearned: number;
+  exercisesCompleted: number;
+  minutesPracticed: number;
+}
+
+function DailyProgressTracker({ stats }: { stats: DailyStats }) {
+  const targetWords = 10;
+  const targetExercises = 5;
+  
+  const wordProgress = Math.min((stats.wordsLearned / targetWords) * 100, 100);
+  const exerciseProgress = Math.min((stats.exercisesCompleted / targetExercises) * 100, 100);
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-indigo-500" />
+          Today's Progress
+        </h4>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats.date}</span>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+            <span>Words Learned</span>
+            <span className="text-indigo-600 dark:text-indigo-400">{stats.wordsLearned} / {targetWords}</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${wordProgress}%` }}
+              className="h-full bg-indigo-500 rounded-full"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div className="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+            <span>Exercises Done</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{stats.exercisesCompleted} / {targetExercises}</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${exerciseProgress}%` }}
+              className="h-full bg-emerald-500 rounded-full"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlashcardDrill({ onVocabLearned }: { onVocabLearned?: (count: number) => void }) {
+  const { language } = useLanguage();
+  const [flashcards, setFlashcards] = useState<Flashcard[]>(() => {
+    const saved = localStorage.getItem('language_flashcards');
+    return saved ? JSON.parse(saved) : [
+      { id: '1', front: 'Hello', back: language === 'es' ? 'Hola' : language === 'fr' ? 'Bonjour' : 'Hello', level: 0, nextReview: Date.now() },
+      { id: '2', front: 'Thank you', back: language === 'es' ? 'Gracias' : language === 'fr' ? 'Merci' : 'Thank you', level: 0, nextReview: Date.now() },
+      { id: '3', front: 'Please', back: language === 'es' ? 'Por favor' : language === 'fr' ? 'S\'il vous plaît' : 'Please', level: 0, nextReview: Date.now() }
+    ];
+  });
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showBack, setShowBack] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
+
+  const activeFlashcards = flashcards.filter(f => f.nextReview <= Date.now());
+  const currentCard = activeFlashcards[currentIndex];
+
+  useEffect(() => {
+    localStorage.setItem('language_flashcards', JSON.stringify(flashcards));
+  }, [flashcards]);
+
+  const generateNewCards = async () => {
+    if (!consumeCredits(2, 'Flashcard Generation AI')) {
+      alert('Insufficient credits.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const apiKey = useCustomKeys && apiKeys.gemini ? apiKeys.gemini : process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key is missing.");
+      const ai = new GoogleGenAI({ apiKey });
+      
+      const response = await generateContentWithFallback(ai, {
+        model: 'gemini-1.5-flash',
+        contents: `Generate 5 new vocabulary flashcards for someone learning ${language}. 
+        Return JSON array of objects: [{"front": "English phrase", "back": "Target language phrase", "hint": "context hint"}]`,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+      
+      const newCards = JSON.parse(response.text || '[]').map((c: any) => ({
+        ...c,
+        id: Math.random().toString(36).substr(2, 9),
+        level: 0,
+        nextReview: Date.now()
+      }));
+      
+      setFlashcards(prev => [...prev, ...newCards]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleResult = (success: boolean) => {
+    const updatedCards = [...flashcards];
+    const cardIndex = updatedCards.findIndex(f => f.id === currentCard.id);
+    
+    if (success) {
+      updatedCards[cardIndex].level += 1;
+      // Spaced repetition intervals: 1 min, 5 min, 15 min, 1 day, 3 days, 7 days
+      const intervals = [1, 5, 15, 1440, 4320, 10080];
+      const interval = intervals[Math.min(updatedCards[cardIndex].level, intervals.length - 1)];
+      updatedCards[cardIndex].nextReview = Date.now() + (interval * 60 * 1000);
+      if (onVocabLearned) onVocabLearned(1);
+    } else {
+      updatedCards[cardIndex].level = 0;
+      updatedCards[cardIndex].nextReview = Date.now() + (1 * 60 * 1000); // Review in 1 min
+    }
+
+    setFlashcards(updatedCards);
+    setShowBack(false);
+    if (currentIndex >= activeFlashcards.length - 1) {
+      setCurrentIndex(0);
+    }
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col items-center justify-center">
+      <div className="max-w-xl w-full">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/50 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Flashcard Drill</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Spaced Repetition Practice</p>
+            </div>
+          </div>
+          <button
+            onClick={generateNewCards}
+            disabled={isGenerating}
+            className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold text-sm hover:bg-indigo-100 transition-colors flex items-center gap-2"
+          >
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Get New Cards
+          </button>
+        </div>
+
+        {activeFlashcards.length > 0 ? (
+          <div className="perspective-1000 h-[300px] w-full relative group">
+            <motion.div
+              initial={false}
+              animate={{ rotateY: showBack ? 180 : 0 }}
+              transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+              className="w-full h-full relative preserves-3d cursor-pointer"
+              onClick={() => setShowBack(!showBack)}
+            >
+              {/* Front */}
+              <div className="absolute inset-0 backface-hidden bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">English</p>
+                <h4 className="text-3xl font-black text-slate-900 dark:text-white mb-2">{currentCard.front}</h4>
+                {currentCard.hint && <p className="text-sm text-slate-500 italic">Hint: {currentCard.hint}</p>}
+                <p className="mt-8 text-xs text-indigo-500 font-bold uppercase tracking-widest animate-pulse">Tap to reveal</p>
+              </div>
+
+              {/* Back */}
+              <div 
+                className="absolute inset-0 backface-hidden bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center shadow-sm"
+                style={{ transform: 'rotateY(180deg)' }}
+              >
+                <p className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4">{language.toUpperCase()}</p>
+                <h4 className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mb-6">{currentCard.back}</h4>
+                
+                <div className="flex gap-4 w-full">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleResult(false); }}
+                    className="flex-1 py-3 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 transition-colors"
+                  >
+                    Forgot
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleResult(true); }}
+                    className="flex-1 py-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    Recalled
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">All Caught Up!</h4>
+            <p className="text-slate-500 dark:text-slate-400 mb-8">You've reviewed all active cards. Come back later for spaced repetition, or generate new cards to keep going.</p>
+            <button
+               onClick={generateNewCards}
+               className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+            >
+              Learn New Words
+            </button>
+          </div>
+        )}
+        
+        <div className="mt-8 flex justify-center gap-2">
+            {activeFlashcards.map((_, idx) => (
+              <div 
+                key={idx} 
+                className={`h-1.5 rounded-full transition-all ${idx === currentIndex ? 'w-8 bg-indigo-600' : 'w-1.5 bg-slate-200 dark:bg-slate-800'}`} 
+              />
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean }) {
-  const [viewMode, setViewMode] = useState<'chat' | 'drill' | 'conversation'>('chat');
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  
+  const [dailyStats, setDailyStats] = useState<DailyStats>(() => {
+    const today = new Date().toLocaleDateString();
+    const saved = localStorage.getItem('language_daily_stats');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.date === today) return parsed;
+    }
+    return { date: today, wordsLearned: 0, exercisesCompleted: 0, minutesPracticed: 0 };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('language_daily_stats', JSON.stringify(dailyStats));
+  }, [dailyStats]);
+
+  const incrementWords = (count: number = 1) => {
+    setDailyStats(prev => ({ ...prev, wordsLearned: prev.wordsLearned + count }));
+  };
+
+  const incrementExercises = () => {
+    setDailyStats(prev => ({ ...prev, exercisesCompleted: prev.exercisesCompleted + 1 }));
+  };
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem('language_tutor_messages');
     if (saved) {
@@ -902,6 +1172,8 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
         }
       });
       
+      incrementWords(1);
+
       setMessages(prev => [...prev, { 
         id: (Date.now() + 1).toString(), 
         role: 'model', 
@@ -920,7 +1192,7 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden relative">
+    <div className="max-w-4xl mx-auto h-[calc(100svh-5rem)] md:h-[calc(100vh-8rem)] flex flex-col bg-white dark:bg-slate-900 md:rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden relative">
       <AnimatePresence>
         {showTutorial && <OnboardingTutorial onComplete={handleCompleteTutorial} />}
       </AnimatePresence>
@@ -936,6 +1208,19 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
               <h2 className="font-bold text-slate-900 dark:text-white leading-tight">AI Tutor</h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Learn interactively</p>
             </div>
+          </div>
+          
+          {/* Daily Progress Mini Tracker for Header */}
+          <div className="flex items-center gap-4 ml-4 px-4 py-1.5 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden min-w-[120px]">
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Words</span>
+                <span className="text-xs font-bold text-indigo-600">{dailyStats.wordsLearned}</span>
+             </div>
+             <div className="w-px h-6 bg-slate-100 dark:bg-slate-700" />
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Tasks</span>
+                <span className="text-xs font-bold text-emerald-600">{dailyStats.exercisesCompleted}</span>
+             </div>
           </div>
           <div className="flex sm:hidden items-center gap-2">
             <button
@@ -992,6 +1277,16 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
             >
               Conversation
             </button>
+            <button
+              onClick={() => setViewMode('flashcard')}
+              className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === 'flashcard'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Flashcards
+            </button>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button
@@ -1017,10 +1312,14 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
         </div>
       </div>
 
+      {viewMode === 'chat' && <DailyProgressTracker stats={dailyStats} />}
+      
       {viewMode === 'drill' ? (
-        <GrammarDrill messages={messages} />
+        <GrammarDrill messages={messages} onGrammarDone={incrementExercises} />
       ) : viewMode === 'conversation' ? (
-        <ConversationPractice isLocked={isLocked} />
+        <ConversationPractice isLocked={isLocked} onVocabLearned={incrementWords} />
+      ) : viewMode === 'flashcard' ? (
+        <FlashcardDrill onVocabLearned={incrementWords} />
       ) : (
         <>
           {/* Messages */}
@@ -1082,7 +1381,7 @@ export function LanguageLearningView({ isLocked = false }: { isLocked?: boolean 
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={isLocked ? "Premium feature locked" : "Type your message..."}
                 disabled={isLocked}
-                className={`flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-slate-900 dark:text-white transition-all outline-none ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 bg-slate-100 dark:bg-slate-800 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-base sm:text-sm text-slate-900 dark:text-white transition-all outline-none ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
               <button
                 onClick={handleSend}

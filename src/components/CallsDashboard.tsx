@@ -66,12 +66,27 @@ export function CallsDashboard({
   
   const [onlineUsers, setOnlineUsers] = useState<User[]>(MOCK_ONLINE_USERS);
   const [incomingCall, setIncomingCall] = useState<{from: string, name: string, signal: any, avatar?: string} | null>(null);
+  const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'connected' | 'error'>('idle');
   const socketRef = useRef<Socket | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+
+  // Simulate dynamic status updates for demo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineUsers(prev => prev.map(user => {
+        // Randomly change status for some users to simulation activity
+        const rand = Math.random();
+        if (rand < 0.05) return { ...user, isOnline: !user.isOnline, inCall: false };
+        if (rand < 0.1 && user.isOnline) return { ...user, inCall: !user.inCall };
+        return user;
+      }));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isTrialActive = trialStartDate ? (Date.now() - trialStartDate < 24 * 60 * 60 * 1000) : false;
   const canRecord = isPro || isTrialActive;
@@ -156,19 +171,26 @@ export function CallsDashboard({
   };
 
   const startCall = async (user: User) => {
+    if (!user.isOnline) {
+      setConnectionError(`${user.name} is currently offline.`);
+      return;
+    }
+    
     if (user.inCall) {
       setConnectionError(`${user.name} is currently in another call.`);
       return;
     }
 
     setIsConnecting(true);
+    setCallStatus('calling');
     setConnectionError(null);
     
     // Check if user is still in the online list
-    const isStillOnline = onlineUsers.find(u => u.id === user.id);
+    const isStillOnline = onlineUsers.find(u => u.id === user.id && u.isOnline);
     if (!isStillOnline) {
       setIsConnecting(false);
-      setConnectionError(`${user.name} has gone offline.`);
+      setCallStatus('error');
+      setConnectionError(`${user.name} has just gone offline.`);
       return;
     }
 
@@ -176,14 +198,15 @@ export function CallsDashboard({
       const stream = await getMediaStream();
       setLocalStream(stream);
 
-      // Simulation timeout for mock or real connection
+      // Connection timeout
       const connectionTimeout = setTimeout(() => {
-        if (isConnecting) {
+        if (isConnecting || callStatus === 'calling') {
           setIsConnecting(false);
-          setConnectionError(`Connection to ${user.name} timed out.`);
+          setCallStatus('error');
+          setConnectionError(`Connection to ${user.name} timed out. Please try again.`);
           if (stream) stream.getTracks().forEach(t => t.stop());
         }
-      }, 10000);
+      }, 15000);
 
       if (socketRef.current && !MOCK_ONLINE_USERS.find(m => m.id === user.id)) {
         const peer = new Peer({
@@ -204,6 +227,7 @@ export function CallsDashboard({
         peer.on('stream', remoteStream => {
           clearTimeout(connectionTimeout);
           setIsConnecting(false);
+          setCallStatus('connected');
           setActiveCall(user);
           setRemoteStream(remoteStream);
         });
@@ -211,7 +235,8 @@ export function CallsDashboard({
         peer.on('error', err => {
           console.error("Peer error:", err);
           setIsConnecting(false);
-          setConnectionError("Failed to establish peer connection.");
+          setCallStatus('error');
+          setConnectionError("A connection error occurred. The other user might have disconnected.");
           clearTimeout(connectionTimeout);
         });
 
@@ -219,15 +244,28 @@ export function CallsDashboard({
       } else {
         // Mock call success after delay
         setTimeout(() => {
+          if (!onlineUsers.find(u => u.id === user.id && u.isOnline)) {
+            clearTimeout(connectionTimeout);
+            setIsConnecting(false);
+            setCallStatus('error');
+            setConnectionError(`${user.name} disconnected before the call started.`);
+            return;
+          }
           clearTimeout(connectionTimeout);
           setIsConnecting(false);
+          setCallStatus('connected');
           setActiveCall(user);
           setRemoteStream(stream);
-        }, 1500);
+        }, 3000);
       }
-    } catch (err) {
+    } catch (err: any) {
       setIsConnecting(false);
-      setConnectionError("Could not access camera or microphone.");
+      setCallStatus('error');
+      if (err.name === 'NotAllowedError') {
+        setConnectionError("Microphone or camera access was denied. Please allow permissions.");
+      } else {
+        setConnectionError("Could not access media devices. Ensure they are connected.");
+      }
       console.error("Error accessing media devices.", err);
     }
   };
@@ -396,26 +434,36 @@ export function CallsDashboard({
 
           <div className="flex flex-col items-center w-full max-w-2xl mb-8">
             <div className="grid grid-cols-3 items-center gap-8 mb-12">
-              <button 
-                onClick={() => setIsMuted(!isMuted)}
-                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all ${isMuted ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/20 rotate-12' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
-              >
-                {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${isMuted ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/20 rotate-6' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
+                >
+                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                </button>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isMuted ? 'text-rose-400' : 'text-white/40'}`}>
+                  {isMuted ? 'Muted' : 'Mic On'}
+                </span>
+              </div>
               
               <button 
                 onClick={endCall} 
-                className="w-20 h-20 rounded-[2rem] bg-rose-600 flex items-center justify-center text-white hover:bg-rose-700 transition-all shadow-2xl shadow-rose-600/40 hover:scale-110 active:scale-90"
+                className="w-20 h-20 rounded-3xl bg-rose-600 flex items-center justify-center text-white hover:bg-rose-700 transition-all shadow-2xl shadow-rose-600/40 hover:scale-110 active:scale-95 group"
               >
-                <PhoneOff className="w-10 h-10" />
+                <PhoneOff className="w-10 h-10 group-active:scale-90 transition-transform" />
               </button>
 
-              <button 
-                onClick={() => setIsVideoOn(!isVideoOn)}
-                className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all ${!isVideoOn ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
-              >
-                {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <button 
+                  onClick={() => setIsVideoOn(!isVideoOn)}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all ${!isVideoOn ? 'bg-white/10 text-white hover:bg-white/20 border border-white/10' : 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20 -rotate-6'}`}
+                >
+                  {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
+                </button>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${isVideoOn ? 'text-indigo-400' : 'text-white/40'}`}>
+                  {isVideoOn ? 'Camera On' : 'Camera Off'}
+                </span>
+              </div>
             </div>
 
             <div className="flex gap-8 w-full px-12">
@@ -604,44 +652,60 @@ export function CallsDashboard({
             </div>
           ) : (
             onlineUsers.map(user => (
-              <div key={user.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+              <div key={user.id} className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all ${!user.isOnline ? 'opacity-60 saturate-50' : ''}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <img 
-                        src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`} 
-                        alt={user.name} 
-                        className="w-12 h-12 rounded-full object-cover bg-slate-100 dark:bg-slate-800"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`;
-                        }}
-                      />
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-slate-900 rounded-full ${user.inCall ? 'bg-amber-500' : 'bg-green-500'}`} />
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-indigo-50 dark:bg-indigo-500/10 border border-slate-200 dark:border-slate-800">
+                        <img 
+                          src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`} 
+                          alt={user.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6366f1&color=fff`;
+                          }}
+                        />
+                      </div>
+                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white dark:border-slate-900 rounded-full ${user.inCall ? 'bg-amber-500' : user.isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white">{user.name}</h3>
-                      {user.inCall ? (
-                        <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-full">In a call</span>
-                      ) : (
-                        <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">Online</span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {user.inCall ? (
+                          <>
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">In a call</span>
+                          </>
+                        ) : user.isOnline ? (
+                          <>
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            <span className="text-xs font-semibold text-green-600 dark:text-green-400">Online</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Offline</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button 
                     onClick={() => startCall(user)}
-                    disabled={user.inCall || isLocked}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                      user.inCall || isLocked
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' 
-                        : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20'
+                    disabled={user.inCall || !user.isOnline || isLocked}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      user.inCall || !user.isOnline || isLocked
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 cursor-not-allowed' 
+                        : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 active:scale-90'
                     }`}
+                    title={user.inCall ? "User in another call" : !user.isOnline ? "User is offline" : "Call user"}
                   >
                     {isLocked ? <Lock className="w-5 h-5" /> : <PhoneCall className="w-5 h-5" />}
                   </button>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mb-1">Call Reason:</p>
-                  <p className="text-sm text-slate-900 dark:text-slate-300">"{user.callReason}"</p>
+                <div className="bg-slate-50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-1">Interest:</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">"{user.callReason}"</p>
                 </div>
               </div>
             ))

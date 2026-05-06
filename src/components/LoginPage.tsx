@@ -75,10 +75,14 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             setError('Invalid password for this account.');
           } else if (signupErr.code === 'auth/weak-password') {
             setError('Password is too weak.');
+          } else if (signupErr.code === 'auth/operation-not-allowed') {
+            setError('Email/Password sign-in is disabled. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
           } else {
             setError(signupErr.message || 'Failed to sign in.');
           }
         }
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password sign-in is disabled. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
       } else {
         setError(err.message || 'Failed to sign in.');
       }
@@ -140,7 +144,11 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       setConfirmationResult(confirmation);
       setStep('verify');
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please ensure your number is correct.');
+      if (err.code === 'auth/operation-not-allowed') {
+        setError('Phone sign-in is disabled. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
+      } else {
+        setError(err.message || 'Failed to send OTP. Please ensure your number is correct.');
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -178,7 +186,11 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       onLoginSuccess();
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'Failed to sign in with Google.');
+        if (err.code === 'auth/operation-not-allowed') {
+          setError('Google sign-in is disabled. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
+        } else {
+          setError(err.message || 'Failed to sign in with Google.');
+        }
       }
       console.error(err);
     } finally {
@@ -195,7 +207,11 @@ export function LoginPage({ onLoginSuccess }: { onLoginSuccess: () => void }) {
       onLoginSuccess();
     } catch (err: any) {
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError(err.message || 'Failed to sign in with Facebook.');
+        if (err.code === 'auth/operation-not-allowed') {
+          setError('Facebook sign-in is disabled. Please enable it in Firebase Console -> Authentication -> Sign-in method.');
+        } else {
+          setError(err.message || 'Failed to sign in with Facebook.');
+        }
       }
       console.error(err);
     } finally {

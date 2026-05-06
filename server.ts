@@ -15,9 +15,13 @@ export function getRazorpay(): Razorpay {
     const key_id = process.env.RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
     if (!key_id || !key_secret) {
-      throw new Error('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables are required');
+      console.warn("RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing. Payment creation will fail.");
     }
-    razorpayClient = new Razorpay({ key_id, key_secret });
+    // Will throw if missing, or we can just pass them and let Razorpay SDK throw later
+    razorpayClient = new Razorpay({ 
+      key_id: key_id || 'dummy_key', 
+      key_secret: key_secret || 'dummy_secret' 
+    });
   }
   return razorpayClient;
 }
@@ -106,26 +110,30 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/payments/history", (req, res) => {
+    res.json([
+      { id: '1', date: new Date().toISOString(), amount: 0, status: 'Active', plan: 'Free Plan' }
+    ]);
+  });
+
+  app.post("/api/razorpay/subscribe", (req, res) => {
+    res.json({ mock: true });
+  });
+
+  app.post("/api/cashfree/subscribe", (req, res) => {
+    res.json({ mock: true });
+  });
+
+  app.post("/api/payments/cancel", (req, res) => {
+    res.json({ success: true });
+  });
+
   app.post("/api/create-razorpay-order", async (req, res) => {
     try {
       const { amount, currency = 'INR', receipt } = req.body;
       
       const key_id = process.env.RAZORPAY_KEY_ID;
-      const key_secret = process.env.RAZORPAY_KEY_SECRET;
       
-      if (!key_id || !key_secret) {
-        // Return mock order if keys are missing
-        return res.json({
-          id: `order_mock_${Date.now()}`,
-          amount: amount * 100,
-          currency,
-          receipt: receipt || `receipt_${Date.now()}`,
-          status: 'created',
-          key_id: 'rzp_test_mock123',
-          mock: true
-        });
-      }
-
       const rzp = getRazorpay();
       const options = {
         amount: amount * 100, // amount in smallest currency unit (paise)
@@ -140,23 +148,7 @@ async function startServer() {
       });
     } catch (err: any) {
       console.error("Razorpay error:", err);
-      
       const errorMsg = err?.error?.description || err?.description || err?.message || JSON.stringify(err);
-      
-      // If authentication fails (invalid keys), fallback to mock order
-      if (typeof errorMsg === 'string' && (errorMsg.includes('Authentication failed') || errorMsg.includes('BAD_REQUEST_ERROR') || errorMsg.includes('invalid api key'))) {
-        const { amount, currency = 'INR', receipt } = req.body;
-        return res.json({
-          id: `order_mock_${Date.now()}`,
-          amount: amount * 100,
-          currency,
-          receipt: receipt || `receipt_${Date.now()}`,
-          status: 'created',
-          key_id: 'rzp_test_mock123',
-          mock: true
-        });
-      }
-      
       res.status(500).json({ error: errorMsg });
     }
   });

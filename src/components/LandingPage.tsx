@@ -1,10 +1,29 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Globe, Mic, Zap, ArrowRight, Download, CheckCircle } from 'lucide-react';
+import { Globe, Mic, Zap, ArrowRight, Download, CheckCircle, Smartphone, Play } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { auth } from '../firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+
+import { Logo } from './Logo';
 
 export function LandingPage({ onLogin }: { onLogin: () => void }) {
   const { t } = useLanguage();
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // Handled by onAuthStateChanged in App.tsx
+    } catch (err: any) {
+      console.error('Google login failed', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
@@ -12,16 +31,7 @@ export function LandingPage({ onLogin }: { onLogin: () => void }) {
       <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center transition-transform hover:rotate-12">
-              <Mic className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-2xl tracking-tighter dark:text-white leading-none">English Master</span>
-                <span className="font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-white tracking-widest leading-none">RRR</span>
-              </div>
-              <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 tracking-widest uppercase mt-0.5">Read, Repeat, Respond.</span>
-            </div>
+            <Logo />
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
@@ -108,9 +118,35 @@ export function LandingPage({ onLogin }: { onLogin: () => void }) {
               >
                 {t('landing.startLearning')} <ArrowRight className="w-5 h-5" />
               </button>
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all">
-                <Download className="w-5 h-5" /> {t('landing.downloadApp')}
+              <button 
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Sign in with Google
               </button>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start mt-6">
+               <button className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 hover:bg-black text-white px-5 py-3 rounded-xl transition-all">
+                  <svg viewBox="0 0 384 512" className="w-6 h-6 fill-current"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-[10px] font-medium">Download on the</span>
+                    <span className="text-xl font-bold font-sans">App Store</span>
+                  </div>
+               </button>
+               <button className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 hover:bg-black text-white px-5 py-3 rounded-xl transition-all">
+                  <svg viewBox="0 0 512 512" className="w-6 h-6 fill-current"><path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/></svg>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-300">Get it on</span>
+                    <span className="text-xl font-bold font-sans">Google Play</span>
+                  </div>
+               </button>
             </div>
           </motion.div>
 
@@ -171,12 +207,95 @@ export function LandingPage({ onLogin }: { onLogin: () => void }) {
             <p className="text-slate-600 dark:text-slate-400">Watch your confidence meter rise as you complete daily lessons and challenges.</p>
           </div>
         </div>
+
+        {/* Testimonials */}
+        <div className="mt-32">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Loved by learners worldwide</h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">Over 100,000 students have improved their English with our AI tutor.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative">
+              <div className="text-amber-400 mb-4 flex gap-1">
+                {'★★★★★'.split('').map((star, i) => <span key={i}>{star}</span>)}
+              </div>
+              <p className="text-slate-700 dark:text-slate-300 mb-6 font-medium italic">"The AI tutor feels like talking to a real native speaker. My confidence in business meetings has skyrocketed within just a month!"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">M</div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Maria S.</h4>
+                  <p className="text-xs text-slate-500">Marketing Professional</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative">
+              <div className="text-amber-400 mb-4 flex gap-1">
+                {'★★★★★'.split('').map((star, i) => <span key={i}>{star}</span>)}
+              </div>
+              <p className="text-slate-700 dark:text-slate-300 mb-6 font-medium italic">"I prepare for my job interviews using the roleplay scenarios. The instant feedback on grammar is surprisingly accurate."</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center font-bold text-emerald-700">D</div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">David Chen</h4>
+                  <p className="text-xs text-slate-500">Software Engineer</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative">
+              <div className="text-amber-400 mb-4 flex gap-1">
+                {'★★★★★'.split('').map((star, i) => <span key={i}>{star}</span>)}
+              </div>
+              <p className="text-slate-700 dark:text-slate-300 mb-6 font-medium italic">"Best investment for my spoken English. Unlike other apps where you just fill in blanks, here you actually have to speak!"</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center font-bold text-rose-700">A</div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Aisha K.</h4>
+                  <p className="text-xs text-slate-500">University Student</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
 
-      {/* Footer - Hidden on mobile */}
-      <footer className="hidden md:block bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 mt-auto">
-        <div className="max-w-6xl mx-auto px-4 text-center text-slate-500 dark:text-slate-400">
-          <p>&copy; {new Date().getFullYear()} English Mastery 30. All rights reserved.</p>
+      {/* Footer */}
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-auto">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="space-y-4 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start">
+              <Logo />
+            </div>
+            <p className="text-sm text-slate-500 max-w-xs font-medium mt-4">Master English fluency with the power of artificial intelligence (RRR System).</p>
+            <div className="flex items-center justify-center md:justify-start gap-4 pt-2">
+               <a href="https://wa.me/#" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-emerald-500 transition-colors">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.821 7.454c-1.895 0-3.744-.509-5.35-1.47l-.384-.228-3.978 1.043 1.062-3.877-.25-.398a10.428 10.428 0 0 1-1.594-5.597c0-5.767 4.693-10.46 10.46-10.46 2.793 0 5.42 1.087 7.401 3.04a10.4 10.4 0 0 1 3.037 7.42c0 5.768-4.693 10.46-10.461 10.46m8.873-19.332A11.94 11.94 0 0 0 12.652 0C5.652 0 .012 5.666 0 12.67c0 2.23.593 4.407 1.71 6.347L0 24l5.12-1.343a11.9 11.9 0 0 0 5.617 1.417h.005c6.994 0 12.65-5.667 12.657-12.67a11.9 11.9 0 0 0-3.376-8.535z"/></svg>
+               </a>
+               <a href="https://instagram.com/#" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-500 transition-colors">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+               </a>
+               <a href="https://facebook.com/#" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+               </a>
+            </div>
+            <p className="text-xs text-slate-400 pt-2">&copy; {new Date().getFullYear()} English Master AI (RRR System). All rights reserved.</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+             <button className="flex items-center gap-3 bg-slate-900 text-white px-5 py-2 rounded-xl border border-slate-800 hover:bg-black transition-all">
+                <Smartphone className="w-5 h-5 text-indigo-400" />
+                <div className="text-left leading-none">
+                  <p className="text-[10px] opacity-70 mb-1">Download on</p>
+                  <p className="text-sm font-bold">App Store</p>
+                </div>
+             </button>
+             <button className="flex items-center gap-3 bg-slate-900 text-white px-5 py-2 rounded-xl border border-slate-800 hover:bg-black transition-all">
+                <Play className="w-5 h-5 text-emerald-400" />
+                <div className="text-left leading-none">
+                  <p className="text-[10px] opacity-70 mb-1">Get it on</p>
+                  <p className="text-sm font-bold">Google Play</p>
+                </div>
+             </button>
+          </div>
         </div>
       </footer>
     </div>

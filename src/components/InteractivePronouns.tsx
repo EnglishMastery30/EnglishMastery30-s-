@@ -18,17 +18,18 @@ const PRONOUN_TABLES = [
     title: "Indefinite Pronouns",
     description: "Words referring to non-specific people, things, or places.",
     columns: [
+      { name: "Reflexive", words: ["Myself", "Ourselves", "Yourself", "Yourselves", "Themselves", "Himself", "Herself", "Itself"] },
       { name: "Person (Body)", words: ["Somebody", "Everybody", "Anybody", "Nobody"] },
-      { name: "Person (One)", words: ["Some one", "Every one", "Any one", "No one (none)"] },
+      { name: "Person (One)", words: ["Some one", "Every one", "Any one", "No one"] },
       { name: "Thing", words: ["Something", "Everything", "Anything", "Nothing"] },
-      { name: "Place", words: ["Some where", "Every where", "Any where", "No where"] },
-      { name: "Time", words: ["Some day", "Every day", "Any day", "No day"] }
+      { name: "Place", words: ["Some where", "Every where", "Any where", "No where"] }
     ]
   },
   {
     title: "Question and Relative Pronouns",
     description: "Words used to ask questions or link relative clauses.",
     columns: [
+      { name: "Time", words: ["Some day", "Every day", "Any day", "No day"] },
       { name: "Base", words: ["What", "Why", "Where", "When", "Which", "Whose", "Whom", "How", "Who"] },
       { name: "Ever", words: ["Whatever", "Why ever", "Wherever", "Whenever", "Whichever", "Whosever", "Whomever", "However", "Whoever"] },
       { name: "So ever", words: ["What so ever", "Why so ever", "Where so ever", "When so ever", "Which so ever", "Whose so ever", "Whom so ever", "How so ever", "Who so ever"] }

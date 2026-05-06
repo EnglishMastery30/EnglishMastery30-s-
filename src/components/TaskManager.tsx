@@ -15,23 +15,31 @@ export interface Task {
 }
 
 export function TaskManager() {
-  const [tasks, setTasks] = useState<Task[]>([
-    { 
-      id: '1', 
-      title: 'Study', 
-      description: '1.1 The task is to add this to the knowledge base.\n1.2 The values need to be entered as decimal points.\n1.3 You will need to maintain consistency.\n1.4 When the values are added, they need to be entered as decimal points.\n1.5 Maintain a decimal point.\n1.6 Then add the values.\n1.7 Enter them as decimal points.\n1.8 Then add the values.\n1.9 Add what they like.\n1.10 Add them as decimal points.',
-      status: 'Pending', 
-      priority: 'High', 
-      dueDate: new Date().toISOString().split('T')[0] 
-    },
-    { id: '2', title: 'Complete Grammar Day 1', status: 'Pending', priority: 'High', dueDate: new Date().toISOString().split('T')[0] },
-    { id: '3', title: 'Review Vocabulary List', status: 'Pending', priority: 'Medium', dueDate: '' },
-    { id: '4', title: 'Practice Pronunciation for 10 min', status: 'Pending', priority: 'Low', dueDate: '' },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const stored = localStorage.getItem('tasks');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error('Failed to parse tasks', e);
+      }
+    }
+    return [
+      { id: '1', title: 'Complete Grammar Day 1', status: 'Pending', priority: 'High', dueDate: new Date().toISOString().split('T')[0] },
+      { id: '2', title: 'Review Vocabulary List', status: 'Pending', priority: 'Medium', dueDate: '' },
+      { id: '3', title: 'Practice Pronunciation for 10 min', status: 'Pending', priority: 'Low', dueDate: '' },
+    ];
+  });
+
+  // Save tasks to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
 
   const [filterStatus, setFilterStatus] = useState<Status | 'All'>('All');
   const [filterPriority, setFilterPriority] = useState<Priority | 'All'>('All');
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('Medium');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
 
@@ -44,12 +52,14 @@ export function TaskManager() {
     const newTask: Task = {
       id: Date.now().toString(),
       title: newTaskTitle,
+      description: newTaskDescription,
       status: 'Pending',
       priority: newTaskPriority,
       dueDate: newTaskDueDate,
     };
     setTasks([...tasks, newTask]);
     setNewTaskTitle('');
+    setNewTaskDescription('');
     setNewTaskDueDate('');
   };
 
@@ -192,35 +202,65 @@ export function TaskManager() {
       </div>
 
       {/* Add Task */}
-      <form onSubmit={addTask} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 mb-8 flex flex-col sm:flex-row gap-3">
-        <input 
-          type="text"
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          placeholder="New task title..."
-          className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-          required
-        />
-        <select 
-          value={newTaskPriority}
-          onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
-          className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-        >
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <input 
-          type="date"
-          value={newTaskDueDate}
-          onChange={(e) => setNewTaskDueDate(e.target.value)}
-          className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-        />
-        <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">
-          <Plus className="w-5 h-5" />
-          <span className="sm:hidden">Add</span>
-        </button>
-      </form>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 mb-8">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <Plus className="w-5 h-5 text-indigo-600" /> Add New Task
+        </h3>
+        <form onSubmit={addTask} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Task Title</label>
+              <input 
+                type="text"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                placeholder="What do you need to do?"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</label>
+                <select 
+                  value={newTaskPriority}
+                  onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all"
+                >
+                  <option value="High">🔴 High</option>
+                  <option value="Medium">🟡 Medium</option>
+                  <option value="Low">🟢 Low</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Due Date</label>
+                <input 
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Description (Optional)</label>
+            <textarea
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+              placeholder="Add some details..."
+              rows={2}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition-all resize-none"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all font-bold shadow-lg shadow-indigo-500/20 active:scale-95">
+              <Plus className="w-5 h-5" />
+              <span>Add Task</span>
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Completion Stats */}
       {tasks.length > 0 && (

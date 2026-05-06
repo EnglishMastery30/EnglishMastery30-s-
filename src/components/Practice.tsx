@@ -89,8 +89,8 @@ These practice sentences are being generated and will be available soon.
 
 const DAYS: Array<{ id: string, title?: string, content?: string, available?: boolean, type?: 'header', titleText?: string, subtitleText?: string, description?: string }> = [
   { id: 'pos_mastery', type: 'header', titleText: 'Parts of Speech Mastery', subtitleText: 'Core Fundamentals', description: 'Master the essential building blocks of English grammar including Nouns, Verbs, and Adjectives.' },
-  { id: 'mastery_1', title: 'Interactive Mastery', content: '🔸 Subject: Mastery\n🔸 Words to Know\n[INTERACTIVE_WORDS]\n🔸 Pronunciation\n[PRONUNCIATION_DRILL]\n🔸 Identify words\n[IDENTIFY_WORDS_DRILL]\n🔸 Verb Practice\n[INTERACTIVE_VERBS]\n🔸 Adjective Practice\n[INTERACTIVE_ADJECTIVES]\n🔸 Adverb Rules 1\n[ADVERB_VOCAB_1]\n🔸 Adverb Rules 2\n[ADVERB_VOCAB_2]\n', available: true },
-  { id: 'mastery_2', title: 'Parts of Speech Practice', content: '🔸 Subject: Grammar\n🔸 Personal and possessive\n[PRONOUNS_FULL_MODULE]\n🔸 Prepositions Simple\n[PREPOSITIONS_SIMPLE]\n🔸 Prepositions Compound\n[PREPOSITIONS_COMPOUND]\n🔸 Prepositions Two Word\n[PREPOSITIONS_TWO_WORD]\n🔸 Prepositions Phrase\n[PREPOSITIONS_PHRASE]\n🔸 Conjunctions Basic\n[CONJUNCTIONS_BASIC]\n🔸 Conjunctions Words\n[CONJUNCTIONS_WORDS_TO_KNOW]\n🔸 Interjections All\n[INTERJECTIONS_MODULE_ALL]\n🔸 Action Words\n[HOUSEHOLD_ACTIONS]\n🔸 Routine Essentials\n[ROUTINE_KEYWORDS]\n🔸 Descriptive Language\n[INTERACTIVE_ADJECTIVES]\n', available:true },
+  { id: 'mastery_1', title: 'Interactive Mastery', content: '🔸 Subject: Mastery\n🔸 Words to Know\n[INTERACTIVE_WORDS]\n🔸 Pronouns Words to Know\n[PRONOUNS_FULL_MODULE]\n🔸 Pronunciation\n[PRONUNCIATION_DRILL]\n🔸 Identify words\n[IDENTIFY_WORDS_DRILL]\n🔸 Verb Practice\n[INTERACTIVE_VERBS]\n🔸 Adjective Practice\n[INTERACTIVE_ADJECTIVES]\n🔸 Adverb Rules 1\n[ADVERB_VOCAB_1]\n🔸 Adverb Rules 2\n[ADVERB_VOCAB_2]\n', available: true },
+  { id: 'mastery_2', title: 'Parts of Speech Practice', content: '🔸 Subject: Grammar\n🔸 Pronouns Words to Know\n[PRONOUNS_FULL_MODULE]\n🔸 Prepositions Simple\n[PREPOSITIONS_SIMPLE]\n🔸 Prepositions Compound\n[PREPOSITIONS_COMPOUND]\n🔸 Prepositions Two Word\n[PREPOSITIONS_TWO_WORD]\n🔸 Prepositions Phrase\n[PREPOSITIONS_PHRASE]\n🔸 Conjunctions Basic\n[CONJUNCTIONS_BASIC]\n🔸 Conjunctions Words\n[CONJUNCTIONS_WORDS_TO_KNOW]\n🔸 Interjections All\n[INTERJECTIONS_MODULE_ALL]\n🔸 Action Words\n[HOUSEHOLD_ACTIONS]\n🔸 Routine Essentials\n[ROUTINE_KEYWORDS]\n🔸 Descriptive Language\n[INTERACTIVE_ADJECTIVES]\n', available:true },
   { id: 'day44', title: 'Nouns: Definition', content: day44Content, available: true },
   { id: 'day45', title: 'Pronouns: Definition', content: day45Content, available: true },
   { id: 'day46', title: 'Verbs: Action and State', content: day46Content, available: true },
@@ -659,13 +659,13 @@ export function Practice({ isLocked = false, completedSessions = [] }: { isLocke
                 if (sentence === '[PRONOUNS_FULL_MODULE]') {
                   return (
                     <div key={index} className="space-y-6">
-                      <AccordionSection title="Personal and possessive" icon={<Users className="w-6 h-6" />}>
+                      <AccordionSection title="Personal Pronouns" icon={<Users className="w-6 h-6" />}>
                         <InteractivePronouns section="personal" />
                       </AccordionSection>
-                      <AccordionSection title="Indefinite Words" icon={<Layers className="w-6 h-6" />}>
+                      <AccordionSection title="Indefinite Pronouns" icon={<Layers className="w-6 h-6" />}>
                         <InteractivePronouns section="indefinite" />
                       </AccordionSection>
-                      <AccordionSection title="Question and relative words" icon={<Type className="w-6 h-6" />}>
+                      <AccordionSection title="Question and Relative Pronouns" icon={<Type className="w-6 h-6" />}>
                         <InteractivePronouns section="question" />
                       </AccordionSection>
                     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Circle, Play, Square, ChevronLeft, ChevronUp, ChevronDown, ArrowRight, Volume2, Target, MessageCircle, AlertCircle, Award, TrendingUp, Star, RefreshCw, Youtube, X, Languages, Loader2, Brain } from 'lucide-react';
+import { CheckCircle, Circle, Play, Pause, Square, ChevronLeft, ChevronUp, ChevronDown, ArrowRight, Volume2, Target, MessageCircle, AlertCircle, Award, TrendingUp, Star, RefreshCw, Youtube, X, Languages, Loader2, Brain } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useLiveAPI } from '../hooks/useLiveAPI';
 import { DaySession } from '../data/curriculum';
@@ -29,19 +29,25 @@ Your goals:
 1. Guide the user through the lesson material.
 2. Provide clear, encouraging feedback on their pronunciation and grammar.
 3. Keep the conversation flowing naturally.
-4. If they make a mistake, gently correct them and ask them to try again.
-5. Speak clearly and at a moderate pace.`;
+4. If they make a mistake, provide a user-friendly and informative explanation of the correction. Explain the grammar rule or word choice clearly so the student can learn from it.
+5. Speak clearly and at a moderate pace.
+6. Encourage them to repeat the corrected phrase.`;
 
   const {
     isConnected,
     isConnecting,
+    isPaused,
     error,
     volume,
     transcripts,
     isProcessing,
     connect,
-    disconnect
+    disconnect,
+    pause,
+    resume
   } = useLiveAPI(systemInstruction, apiKey);
+
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
 
   const handleSelection = (e?: React.MouseEvent | React.TouchEvent) => {
     // If clicking inside the translation popup, do nothing
@@ -109,7 +115,25 @@ Your goals:
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
+      utterance.onstart = () => setIsSpeechPaused(false);
+      utterance.onend = () => setIsSpeechPaused(false);
+      utterance.onerror = () => setIsSpeechPaused(false);
       window.speechSynthesis.speak(utterance);
+      setIsSpeechPaused(false);
+    }
+  };
+
+  const toggleSpeechPause = () => {
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.speaking) {
+        if (isSpeechPaused) {
+          window.speechSynthesis.resume();
+          setIsSpeechPaused(false);
+        } else {
+          window.speechSynthesis.pause();
+          setIsSpeechPaused(true);
+        }
+      }
     }
   };
   
@@ -275,24 +299,31 @@ Your goals:
             <div className="p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl flex items-start gap-3 text-left">
               <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">Connection Issue</h4>
+                <h4 className="font-semibold text-rose-900 dark:text-rose-100 mb-1">Session Error</h4>
                 <p className="text-sm text-rose-700 dark:text-rose-300 mb-3">
                   {error.toLowerCase().includes('permission') || error.toLowerCase().includes('device') || error.toLowerCase().includes('microphone') || error.toLowerCase().includes('audio')
-                    ? "We couldn't access your microphone. Please check your browser permissions and try again."
+                    ? "Microphone access blocked. Please enable it in your browser settings and try again."
+                    : error.toLowerCase().includes('quota') || error.toLowerCase().includes('429')
+                    ? "API limits reached. Try using your own Gemini key in the settings or wait a few minutes."
                     : error.toLowerCase().includes('api') || error.toLowerCase().includes('fetch') || error.toLowerCase().includes('network')
-                    ? "There was a network error connecting to the AI Voice Coach. Please check your internet connection."
-                    : "The connection to your AI Voice Coach was lost or failed to start. Please try again."}
+                    ? "Network failure occurred. Please re-check your internet connection and try again."
+                    : "Something went wrong with the AI Voice Coach. This could be due to a temporary server issue."}
                 </p>
-                <p className="text-xs text-rose-600/70 dark:text-rose-400/70 font-mono mb-3 break-words">
-                  Details: {error}
-                </p>
-                <button 
-                  onClick={connect}
-                  disabled={isConnecting}
-                  className="text-sm font-medium text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-500/20 hover:bg-rose-200 dark:hover:bg-rose-500/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isConnecting ? "Reconnecting..." : "Try Reconnecting"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button 
+                    onClick={connect}
+                    disabled={isConnecting}
+                    className="text-xs font-bold uppercase tracking-wider text-rose-700 bg-rose-100 px-4 py-2 rounded-lg"
+                  >
+                    {isConnecting ? "Reconnecting..." : "Reconnect Now"}
+                  </button>
+                  <button 
+                    onClick={onBack}
+                    className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-white border border-slate-200 px-4 py-2 rounded-lg"
+                  >
+                    Go Back
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -313,13 +344,24 @@ Your goals:
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
               {session.topic}
             </h2>
-            <button 
-              onClick={() => playAudio(session.topic)}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 transition-colors shrink-0"
-              title="Listen to topic"
-            >
-              <Volume2 className="w-6 h-6" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+               <button 
+                onClick={() => playAudio(session.topic)}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-500 transition-colors"
+                title="Listen to topic"
+              >
+                <Volume2 className="w-5 h-5" />
+              </button>
+              {window.speechSynthesis.speaking && (
+                <button 
+                  onClick={toggleSpeechPause}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-amber-500 transition-colors"
+                  title={isSpeechPaused ? "Resume Audio" : "Pause Audio"}
+                >
+                  {isSpeechPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex items-start justify-between gap-4">
             <p className="text-lg text-slate-600 dark:text-slate-400">
@@ -533,22 +575,37 @@ Your goals:
                 </button>
               ) : isConnected ? (
                 <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      disconnect();
-                      setShowSummary(true);
-                      onComplete();
-                    }}
-                    className="w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 dark:bg-rose-500/90 dark:hover:bg-rose-500 text-white"
-                  >
-                    <Square className="w-5 h-5" />
-                    End Session
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={isPaused ? resume : pause}
+                      className={`flex-1 py-4 px-6 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 ${
+                        isPaused 
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                          : 'bg-amber-500 hover:bg-amber-600 text-white'
+                      }`}
+                    >
+                      {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                      {isPaused ? "Resume Session" : "Pause Session"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        disconnect();
+                        setShowSummary(true);
+                        onComplete();
+                      }}
+                      className="p-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all"
+                      title="End Session"
+                    >
+                      <Square className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               ) : null}
               
               <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
-                {isConnected ? "Speak naturally. Your Voice Coach is listening." : error ? "Fix the issue above to continue." : "Ensure your microphone is connected."}
+                {isConnected 
+                  ? (isPaused ? "Session is paused. Take your time." : "Speak naturally. Your Voice Coach is listening.") 
+                  : error ? "Fix the issue above to continue." : "Ensure your microphone is connected."}
               </p>
             </div>
           </div>

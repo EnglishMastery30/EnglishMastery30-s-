@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Play, Save, Loader2, Target, CheckCircle, Activity, SkipForward, Brain, Languages, Volume2, ChevronLeft } from 'lucide-react';
+import { Mic, MicOff, Play, Pause, Save, Loader2, Target, CheckCircle, Activity, SkipForward, Brain, Languages, Volume2, ChevronLeft } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { generateContentWithFallback } from '../utils/aiFallback';
 import { useCredits } from '../contexts/CreditsContext';
@@ -74,6 +74,10 @@ const SCENARIOS = [
   { id: '18', title: 'Ethical Dilemma', description: 'Discuss a complex ethical situation at work with a trusted mentor.', difficulty: 'Advanced' },
   { id: '19', title: 'Conflict Resolution', description: 'Politely disagree with a colleague\'s suggestion and mediate a professional compromise.', difficulty: 'Advanced' },
   { id: '20', title: 'Giving Feedback', description: 'Deliver constructive, professional feedback to a team member about their recent performance.', difficulty: 'Advanced' },
+  { id: '56', title: 'Technical Debt Debate', description: 'Discuss the trade-offs of fixing technical debt vs building new features with your product manager.', difficulty: 'Advanced' },
+  { id: '57', title: 'Cross-functional Tension', description: 'Address a bottleneck with a lead from another department while remaining diplomatic.', difficulty: 'Advanced' },
+  { id: '58', title: 'Strategy Pivot', description: 'Explain a major change in business strategy to a concerned client or investor.', difficulty: 'Advanced' },
+  { id: '59', title: 'Budget Allocation', description: 'Handle a disagreement over limited resources during a high-stakes planning meeting.', difficulty: 'Advanced' },
   { id: '46', title: 'Board Meeting', description: 'Argue for a budget increase for your department in front of company leadership.', difficulty: 'Advanced' },
   { id: '47', title: 'Product Pitch', description: 'Pitch your startup idea to a group of potential angel investors.', difficulty: 'Advanced' },
   { id: '48', title: 'Media Interview', description: 'Answer tough questions from a journalist about a controversial company decision.', difficulty: 'Advanced' },
@@ -105,6 +109,7 @@ export function RolePlayScenarios({ onBack }: RolePlayScenariosProps) {
   const MAX_INPUT_LENGTH = 1000;
   const [isLoading, setIsLoading] = useState(false);
   const [playSpeed, setPlaySpeed] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { consumeCredits, apiKeys, useCustomKeys } = useCredits();
@@ -322,18 +327,27 @@ Return a JSON object with this exact structure:
     } catch (error: any) {
       console.error('Roleplay error:', error);
       let errorMessage = 'Let\'s pause the roleplay. There was a connection error.';
+      let nextStep = 'Please try again in a moment or check your internet.';
       
       if (error.message?.includes('API key')) {
-        errorMessage = 'Your Gemini API key is missing or invalid. Please check your settings.';
+        errorMessage = 'Gemini API Configuration Error';
+        nextStep = 'Your API key is missing or invalid. Go to Settings to fix this.';
       } else if (error.message?.includes('safety')) {
-        errorMessage = 'I cannot respond due to safety filters. Please try rephrasing your message.';
+        errorMessage = 'Content Safety Restriction';
+        nextStep = 'The AI cannot respond according to safety guidelines. Try rephrasing your input.';
       } else if (error.message?.includes('quota') || error.message?.includes('429')) {
-        errorMessage = 'AI quota exceeded. Please wait a moment or switch to your own API key.';
+        errorMessage = 'AI System Busy (Quota Limit)';
+        nextStep = 'We have reached the free-tier limit. Wait a minute or use a custom API key.';
       } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-        errorMessage = 'Network error. Please check your internet connection.';
+        errorMessage = 'Network Connection Lost';
+        nextStep = 'Check your Wi-Fi or data connection. We could not reach the AI server.';
       }
       
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: errorMessage }]);
+      setMessages(prev => [...prev, { 
+        id: Date.now().toString(), 
+        role: 'model', 
+        text: `### ${errorMessage}\n\n${nextStep}` 
+      }]);
     } finally {
         setIsLoading(false);
     }
@@ -414,7 +428,19 @@ Return a JSON object with this exact structure:
           </button>
           
           <div className="hidden md:flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Speed</span>
+            <button
+              onClick={() => setIsPaused(!isPaused)}
+              className={`p-1.5 rounded-lg transition-all ${
+                isPaused 
+                  ? 'bg-emerald-500 text-white shadow-sm' 
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+              title={isPaused ? "Resume Session" : "Pause Session"}
+            >
+              {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+            </button>
+            <span className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Speed</span>
           {[0.5, 1, 1.5, 2].map((speed) => (
             <button
               key={speed}
@@ -523,9 +549,20 @@ Return a JSON object with this exact structure:
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="mt-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center gap-3 shrink-0">
+      <div className="mt-4 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center gap-3 shrink-0 relative overflow-hidden">
+        {isPaused && (
+          <div className="absolute inset-0 z-10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
+            <button 
+              onClick={() => setIsPaused(false)}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-full font-bold shadow-lg flex items-center gap-2"
+            >
+              <Play className="w-4 h-4" /> Resume Practice
+            </button>
+          </div>
+        )}
         <button
           onClick={toggleListening}
+          disabled={isPaused}
           className={`p-4 rounded-xl transition-colors shadow-sm shrink-0 ${isListening ? 'bg-rose-100 text-rose-600 animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
         >
           {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}

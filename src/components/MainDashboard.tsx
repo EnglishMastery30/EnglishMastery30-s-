@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Activity, Target, Brain, ArrowRight, CheckCircle, Sparkles, Zap, BookOpen, MessageCircle, Briefcase, Mic, Volume2, Languages, Quote, ArrowRightLeft, Code, Lock, Flame, CreditCard, Clock, Share2, Headphones, ChevronRight, Info, Star } from 'lucide-react';
+import { Play, Activity, Target, Brain, ArrowRight, CheckCircle, Sparkles, Zap, BookOpen, MessageCircle, Briefcase, Mic, Volume2, Languages, Quote, ArrowRightLeft, Code, Lock, Flame, CreditCard, Clock, Share2, Headphones, ChevronRight, Info, Star, Camera, Smartphone, Globe } from 'lucide-react';
 import { curriculum, DaySession } from '../data/curriculum';
 import { PremiumUpgrade } from './PremiumUpgrade';
 import { InviteBanner } from './InviteBanner';
 import { QuickTranslate } from './QuickTranslate';
 import { useCredits } from '../contexts/CreditsContext';
+
+import { Logo } from './Logo';
 
 export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro = false, isLocked = false, completedSessions = [] }: { onSelectDay: (day: DaySession) => void, onSelectSection: (section: string) => void, streak?: number, isPro?: boolean, isLocked?: boolean, completedSessions?: number[] }) {
   const nextLessonIndex = curriculum.findIndex(d => !completedSessions.includes(d.day));
@@ -13,6 +15,24 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
   const nextLesson = nextLessonIndex !== -1 && nextLessonIndex + 1 < curriculum.length ? curriculum[nextLessonIndex + 1] : curriculum[0];
   const [activeSlide, setActiveSlide] = useState(0);
   const { credits, useCustomKeys } = useCredits();
+
+  // Load stats from localStorage
+  const dailyStats = (() => {
+    const today = new Date().toLocaleDateString();
+    const saved = localStorage.getItem('language_daily_stats');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.date === today) return parsed;
+    }
+    return { wordsLearned: 0, exercisesCompleted: 0 };
+  })();
+
+  const learningHistory = (() => {
+    const flashcards = JSON.parse(localStorage.getItem('language_flashcards') || '[]');
+    const totalWords = flashcards.length;
+    const masteredWords = flashcards.filter((f: any) => f.level > 3).length;
+    return { totalWords, masteredWords };
+  })();
 
   const playAudio = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -32,6 +52,8 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
     { id: 'shadowing', title: 'Shadowing Practice', icon: Headphones, color: 'orange', description: 'Mimic native speakers for fluency' },
     { id: 'vocabulary', title: 'Vocabulary Builder', icon: Sparkles, color: 'amber', description: 'Expand your word bank' },
     { id: 'professional', title: 'Professional English', icon: Briefcase, color: 'indigo', description: 'Business and workplace communication' },
+    { id: 'tasks', title: 'Study Tasks', icon: CheckCircle, color: 'indigo', description: 'Manage your study goals' },
+    { id: 'stories', title: 'Story Time', icon: BookOpen, color: 'emerald', description: 'Scheduled reading practice' },
   ];
 
   return (
@@ -42,31 +64,29 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
       className="space-y-8"
     >
       {/* Branded Header Section */}
-      <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-none relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
-        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-2">
-            <div className="flex items-center gap-3">
-              <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">English Master</h2>
-              <span className="px-3 py-1 bg-amber-500 text-white text-xs font-black rounded-lg tracking-[0.2em] shadow-none">RRR</span>
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-none relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-8 relative z-10 w-full">
+            <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-2">
+              <Logo />
+              <p className="text-slate-500 dark:text-slate-400 mt-4 max-w-md font-medium leading-relaxed">
+                Master the art of English through our scientifically proven RRR methodology. Engage with immersive sessions that build natural fluency.
+              </p>
             </div>
-            <p className="text-sm font-black text-indigo-500 dark:text-indigo-400 tracking-[0.3em] uppercase">Read, Repeat, Respond.</p>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 max-w-md font-medium leading-relaxed">
-              Master the art of English through our scientifically proven RRR methodology. Engage with immersive sessions that build natural fluency.
-            </p>
-          </div>
-          <div className="flex-1 grid grid-cols-3 gap-4 w-full">
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
-              <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
-              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Read</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
-              <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
-              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Repeat</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
-              <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
-              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Respond</div>
+            <div className="grid grid-cols-3 gap-3 w-full sm:w-auto">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
+                <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
+                <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Read</div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
+                <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
+                <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Repeat</div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center transition-transform hover:scale-105">
+                <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">R</div>
+                <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Respond</div>
+              </div>
             </div>
           </div>
         </div>
@@ -137,8 +157,8 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
             <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Completed Lessons</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{completedSessions.length}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Exercises Today</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{dailyStats.exercisesCompleted}</p>
           </div>
         </div>
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-none flex items-center gap-4">
@@ -146,8 +166,8 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
             <Sparkles className="w-6 h-6 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Vocabulary Learned</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{completedSessions.length * 5}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Words Today</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{dailyStats.wordsLearned}</p>
           </div>
         </div>
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-none flex items-center gap-4">
@@ -273,22 +293,22 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
               <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
                 <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">12</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{completedSessions.length || 0}</span>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Sessions</span>
             </div>
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-none flex flex-col items-center justify-center text-center">
               <div className="w-10 h-10 bg-purple-50 dark:bg-purple-500/10 rounded-full flex items-center justify-center mb-3">
                 <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">145</span>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">New Words</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{learningHistory.totalWords}</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Vocab Bank</span>
             </div>
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-none flex flex-col items-center justify-center text-center">
               <div className="w-10 h-10 bg-amber-50 dark:bg-amber-500/10 rounded-full flex items-center justify-center mb-3">
                 <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">85%</span>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Accuracy</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{Math.round((learningHistory.masteredWords / (learningHistory.totalWords || 1)) * 100)}%</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Mastery</span>
             </div>
           </div>
 
@@ -340,6 +360,10 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
                         window.dispatchEvent(new CustomEvent('navigate', { detail: 'grammar-drill' }));
                       } else if (section.id === 'shadowing') {
                         window.dispatchEvent(new CustomEvent('navigate', { detail: 'shadowing' }));
+                      } else if (section.id === 'tasks') {
+                        window.dispatchEvent(new CustomEvent('navigate', { detail: 'tasks' }));
+                      } else if (section.id === 'stories') {
+                        window.dispatchEvent(new CustomEvent('navigate', { detail: 'stories' }));
                       } else {
                         onSelectSection(section.title);
                       }
@@ -446,6 +470,40 @@ export function MainDashboard({ onSelectDay, onSelectSection, streak = 0, isPro 
 
       <InviteBanner />
       {!isPro && <PremiumUpgrade />}
+
+      {/* Mobile App Download Banner */}
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-none flex flex-col md:flex-row items-center gap-10 overflow-hidden relative group">
+        <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/10 transition-colors" />
+        
+        <div className="w-full space-y-6 text-center md:text-left">
+          <div className="space-y-4 flex flex-col items-center md:items-start">
+             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-black tracking-widest uppercase">
+                <Smartphone className="w-4 h-4" /> Go Mobile
+             </div>
+             <h3 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">Learn English anywhere, with anyone.</h3>
+             <p className="text-slate-600 dark:text-slate-400 font-medium max-w-2xl">
+               Get the English Master app for iOS and Android. Practice conversations while commuting or traveling.
+             </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+            <button className="flex items-center gap-3 bg-slate-900 dark:bg-slate-800 text-white px-6 py-3 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-900/20 group">
+               <Smartphone className="w-6 h-6 text-indigo-400" />
+               <div className="text-left">
+                 <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none">Download on</p>
+                 <p className="text-sm font-black">App Store</p>
+               </div>
+            </button>
+            <button className="flex items-center gap-3 bg-slate-900 dark:bg-slate-800 text-white px-6 py-3 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-900/20 group">
+               <Play className="w-6 h-6 text-emerald-400" />
+               <div className="text-left">
+                 <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest leading-none">Get it on</p>
+                 <p className="text-sm font-black">Google Play</p>
+               </div>
+            </button>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 }

@@ -413,9 +413,9 @@ export function GrammarDrill({ onBack, isLocked = false }: GrammarDrillProps) {
           
           Evaluate if the constructed sentence is grammatically correct and makes sense.
           If they spoke it, also evaluate if it sounds like a valid pronunciation/interpretation of the target words, and provide specific pronunciation feedback.
-          If it is incorrect, provide specific feedback focusing on word order and verb conjugation.
+          If it is incorrect, provide a detailed explanation of the error (word order, conjugation, etc.), explain WHY it is wrong, and how to fix it.
           Suggest alternative valid sentences if the user's answer is close but not perfect.
-          Also, provide a clear explanation of the grammar rules involved in this sentence structure. As part of the explanation, include a side-by-side comparison of an unnatural (but technically correct) sentence versus a natural-sounding version related to this grammar point. Add a short note explaining why the natural version works better. Use decimal points to format this comparison (e.g., 1.1 Unnatural: [sentence], 1.2 Natural: [sentence], 1.3 Note: [explanation]).
+          Also, provide a clear explanation of the grammar rules involved in this sentence structure.
           
           Return a JSON object with this exact structure:
           {

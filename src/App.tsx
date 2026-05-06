@@ -18,7 +18,7 @@ import { NearbyClasses } from './components/NearbyClasses';
 import { SearchBar } from './components/SearchBar';
 import { QuickTranslate } from './components/QuickTranslate';
 import { AudioTranslator } from './components/AudioTranslator';
-import { CheckCircle, Circle, Play, Square, ChevronLeft, ChevronRight, Mic, Target, BookOpen, BarChart2, Moon, Sun, Shield, User, Users, LayoutDashboard, ArrowRight, Volume2, Clock, AlertCircle, Star, Award, TrendingUp, Brain, MessageCircle, RefreshCw, Lock, Youtube, Share2, MapPin, Languages, ArrowUp, Home, Menu, X, Loader2, MessageSquare, FileText, Layers, CheckSquare, Headphones, Trophy } from 'lucide-react';
+import { CheckCircle, Circle, Play, Square, ChevronLeft, ChevronRight, Mic, Target, BookOpen, BarChart2, Moon, Sun, Shield, User, Users, LayoutDashboard, ArrowRight, Volume2, Clock, AlertCircle, Star, Award, TrendingUp, Brain, MessageCircle, RefreshCw, Lock, Youtube, Share2, MapPin, Languages, ArrowUp, Home, Menu, X, Loader2, MessageSquare, FileText, Layers, CheckSquare, Headphones, Trophy, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from './contexts/LanguageContext';
 
@@ -34,11 +34,17 @@ import { ApiKeysManagement } from './components/ApiKeysManagement';
 import { GlobalDictionary } from './components/GlobalDictionary';
 import { MyFiles } from './components/MyFiles';
 import { FeedbackOverlay } from './components/FeedbackOverlay';
+import { AboutUs } from './components/AboutUs';
+import { ContactUs } from './components/ContactUs';
+import { Marketing } from './components/Marketing';
+import { Support } from './components/Support';
+import { Logo } from './components/Logo';
 
 import { TextGenerator } from './components/TextGenerator';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { Practice } from './components/Practice';
 import { TaskManager } from './components/TaskManager';
+import { StoryTime } from './components/StoryTime';
 import { ShadowingPractice } from './components/ShadowingPractice';
 import { TutorsList } from './components/TutorsList';
 import { TrialBanner, TrialModal } from './components/TrialBanner';
@@ -50,7 +56,7 @@ import { RolePlayScenarios } from './components/RolePlayScenarios';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { Leaderboard } from './components/Leaderboard';
 
-type ViewState = 'landing' | 'login' | 'dashboard' | 'daily-talk' | 'journey' | 'language-learning' | 'reports' | 'profile' | 'section' | 'calls' | 'privacy' | 'terms' | 'nearby' | 'translate' | 'upgrade' | 'vocabulary' | 'grammar-drill' | 'subscription-management' | 'api-keys' | 'my-files' | 'practice' | 'tutors' | 'text-generator' | 'roleplay' | 'culture' | 'vocab-builder' | 'tasks' | 'shadowing' | 'leaderboard';
+type ViewState = 'landing' | 'login' | 'dashboard' | 'daily-talk' | 'journey' | 'language-learning' | 'reports' | 'profile' | 'section' | 'calls' | 'privacy' | 'terms' | 'nearby' | 'translate' | 'upgrade' | 'vocabulary' | 'grammar-drill' | 'subscription-management' | 'api-keys' | 'my-files' | 'practice' | 'tutors' | 'text-generator' | 'roleplay' | 'culture' | 'vocab-builder' | 'tasks' | 'shadowing' | 'leaderboard' | 'about' | 'contact' | 'marketing' | 'support' | 'stories';
 
 function AppContent() {
   const [selectedDay, setSelectedDay] = useState<DaySession | null>(null);
@@ -83,6 +89,35 @@ function AppContent() {
     const stored = localStorage.getItem('completedSessions');
     return stored ? JSON.parse(stored) : [];
   });
+  
+  const [learningStats, setLearningStats] = useState(() => {
+    const defaultStats = { vocabularyLearned: 0, grammarAccuracy: 0, totalGrammarDrills: 0, correctGrammarDrills: 0 };
+    try {
+      const stored = localStorage.getItem('learningStats');
+      return stored ? { ...defaultStats, ...JSON.parse(stored) } : defaultStats;
+    } catch {
+      return defaultStats;
+    }
+  });
+
+  const updateGrammarStats = (isCorrect: boolean) => {
+    setLearningStats((prev: any) => {
+      const total = prev.totalGrammarDrills + 1;
+      const correct = prev.correctGrammarDrills + (isCorrect ? 1 : 0);
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+      const newStats = { ...prev, totalGrammarDrills: total, correctGrammarDrills: correct, grammarAccuracy: accuracy };
+      localStorage.setItem('learningStats', JSON.stringify(newStats));
+      return newStats;
+    });
+  };
+
+  const addVocabulary = (count: number) => {
+    setLearningStats((prev: any) => {
+      const newStats = { ...prev, vocabularyLearned: prev.vocabularyLearned + count };
+      localStorage.setItem('learningStats', JSON.stringify(newStats));
+      return newStats;
+    });
+  };
   
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackSession, setFeedbackSession] = useState('');
@@ -387,6 +422,10 @@ function AppContent() {
           <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/privacy" element={<PrivacyPolicy onBack={() => setCurrentView('login')} />} />
           <Route path="/terms" element={<TermsOfService onBack={() => setCurrentView('login')} />} />
+          <Route path="/about" element={<AboutUs onBack={() => setCurrentView('login')} />} />
+          <Route path="/contact" element={<ContactUs onBack={() => setCurrentView('login')} />} />
+          <Route path="/marketing" element={<Marketing onBack={() => setCurrentView('login')} />} />
+          <Route path="/support" element={<Support onBack={() => setCurrentView('login')} />} />
           <Route path="/" element={<LandingPage onLogin={() => setCurrentView('login')} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -411,7 +450,8 @@ function AppContent() {
     { id: 'culture', label: 'Culture', icon: AlertCircle },
     { id: 'roleplay', label: 'Roleplay', icon: Target },
     { id: 'nearby', label: 'Nearby', icon: MapPin },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy }
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+    { id: 'stories', label: 'Stories', icon: BookOpen }
   ];
 
   const handleSwipe = (direction: number) => {
@@ -473,16 +513,8 @@ function AppContent() {
               className="flex items-center gap-2 cursor-pointer ml-1 group" 
               onClick={() => { setCurrentView('dashboard'); setSelectedDay(null); }}
             >
-              <div className="w-8 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
-                <Mic className="w-5 h-5 text-white" />
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <div className="flex items-center gap-2">
-                  <h1 className="font-bold text-xl tracking-tighter dark:text-white leading-none">English Master</h1>
-                  <span className="font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-white tracking-widest leading-none mt-0.5">RRR</span>
-                </div>
-                <span className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 tracking-widest uppercase mt-0.5">Read, Repeat, Respond.</span>
-              </div>
+              <Logo className="hidden sm:flex transition-transform group-hover:scale-105" />
+              <Logo className="flex sm:hidden" showText={false} />
             </div>
           </div>
           
@@ -666,7 +698,9 @@ function AppContent() {
                 <JourneyView onSelectDay={setSelectedDay} isLocked={isLocked} completedSessions={completedSessions} />
               } />
               <Route path="/language-learning" element={
-                <LanguageLearningView isLocked={isLocked} />
+                <LanguageLearningView 
+                  isLocked={isLocked} 
+                />
               } />
               <Route path="/text-generator" element={
                 <TextGenerator />
@@ -711,6 +745,18 @@ function AppContent() {
               } />
               <Route path="/terms" element={
                 <TermsOfService onBack={() => setCurrentView(isAuthenticated ? 'profile' : 'login')} />
+              } />
+              <Route path="/about" element={
+                <AboutUs onBack={() => setCurrentView(isAuthenticated ? 'profile' : 'login')} />
+              } />
+              <Route path="/contact" element={
+                <ContactUs onBack={() => setCurrentView(isAuthenticated ? 'profile' : 'login')} />
+              } />
+              <Route path="/marketing" element={
+                <Marketing onBack={() => setCurrentView(isAuthenticated ? 'profile' : 'login')} />
+              } />
+              <Route path="/support" element={
+                <Support onBack={() => setCurrentView(isAuthenticated ? 'profile' : 'login')} />
               } />
               <Route path="/reports" element={
                 <ReportsView isLocked={isLocked} />
@@ -764,6 +810,9 @@ function AppContent() {
               <Route path="/tasks" element={
                 <TaskManager />
               } />
+              <Route path="/stories" element={
+                <StoryTime />
+              } />
               <Route path="/grammar-drill" element={
                 <div className="max-w-4xl mx-auto py-8">
                   <GrammarDrill onBack={() => setCurrentView('dashboard')} isLocked={isLocked} />
@@ -814,52 +863,63 @@ function AppContent() {
         </nav>
       </div>
 
-      {/* Footer - Replaced with AI Tutorial Banner */}
-      <footer className="bg-indigo-900 text-white mt-auto py-16 relative overflow-hidden lg:border-t lg:border-indigo-800 pb-safe pb-24 lg:pb-16">
-        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/tech/1920/1080?blur=4')] mix-blend-overlay opacity-20 bg-cover bg-center"></div>
-        <div className="absolute top-0 right-0 p-12 opacity-10">
-          <Brain className="w-64 h-64 text-white" />
-        </div>
+      {/* Footer - Updated with modern branding and mobile app links */}
+      <footer className="bg-slate-900 text-white mt-auto py-16 relative overflow-hidden lg:border-t lg:border-slate-800 pb-safe pb-24 lg:pb-16">
+        <div className="absolute inset-0 bg-indigo-900/10 mix-blend-overlay opacity-30"></div>
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-12 mb-12">
-            <div className="text-center md:text-left max-w-2xl">
-              <h3 className="text-4xl font-black tracking-tight mb-4 text-white leading-tight">Experience modern AI Language Training</h3>
-              <p className="text-indigo-200 text-lg font-medium opacity-80">
-                Join thousands of students mastering spoken English through immersion. Our AI tutors provide a safe, high-quality practice environment available 24/7.
+          <div className="flex flex-col md:flex-row items-start justify-between gap-12 mb-12">
+            <div className="max-w-md space-y-6">
+              <Logo forceDark />
+              <p className="text-slate-400 text-lg leading-relaxed">
+                Connect with our AI tutors anywhere, anytime. Learn faster with our unique RRR method.
               </p>
             </div>
-            <button 
-              onClick={() => {
-                if (!isLocked) {
-                  setCurrentView('language-learning');
-                  setSelectedDay(null);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-              className="px-10 py-5 bg-white text-indigo-900 rounded-[1.5rem] font-black text-lg hover:bg-slate-50 transition-all shadow-none hover:-translate-y-1 active:scale-95 flex items-center gap-3 whitespace-nowrap"
-            >
-              <Brain className="w-6 h-6" />
-              Try AI Tutor Now
-            </button>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-12">
+              <div className="space-y-4">
+                <h4 className="font-bold text-indigo-400 uppercase tracking-widest text-xs">Resources</h4>
+                <ul className="space-y-3">
+                  <li><button onClick={() => setCurrentView('journey')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Courses</button></li>
+                  <li><button onClick={() => setCurrentView('stories')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Stories</button></li>
+                  <li><button onClick={() => setCurrentView('tutors')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">AI Tutors</button></li>
+                </ul>
+              </div>
+              <div className="space-y-4">
+                <h4 className="font-bold text-indigo-400 uppercase tracking-widest text-xs">Corporate</h4>
+                <ul className="space-y-3">
+                  <li><button onClick={() => setCurrentView('about')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">About Us</button></li>
+                  <li><button onClick={() => setCurrentView('contact')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Contact</button></li>
+                  <li><button onClick={() => setCurrentView('support')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Support</button></li>
+                </ul>
+              </div>
+              <div className="space-y-4 hidden sm:block">
+                <h4 className="font-bold text-indigo-400 uppercase tracking-widest text-xs">Legal</h4>
+                <ul className="space-y-3">
+                  <li><button onClick={() => setCurrentView('privacy')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Privacy</button></li>
+                  <li><button onClick={() => setCurrentView('terms')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Terms</button></li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <div className="pt-12 border-t border-indigo-800/50 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-                 <Mic className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-black tracking-tighter text-lg">English Mastery</span>
-            </div>
-            
-            <div className="flex flex-wrap justify-center items-center gap-8">
-              <button onClick={() => setCurrentView('terms')} className="text-sm font-bold text-indigo-300 hover:text-white transition-colors">Terms of Service</button>
-              <button onClick={() => setCurrentView('privacy')} className="text-sm font-bold text-indigo-300 hover:text-white transition-colors">Privacy Policy</button>
-              <button onClick={() => setCurrentView('tutors')} className="text-sm font-bold text-indigo-300 hover:text-white transition-colors">Our Tutors</button>
-            </div>
-
-            <p className="text-xs font-bold text-indigo-400/60 tracking-widest uppercase">
-              © 2024 AI Language Lab. All Rights Reserved.
+          <div className="pt-12 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-xs font-bold text-slate-500 tracking-widest uppercase">
+              © 2026 English Master AI (RRR System). Empowering global speakers.
             </p>
+            <div className="flex items-center gap-4">
+               <a href="https://wa.me/#" target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 hover:bg-emerald-500/20 rounded-xl transition-all text-slate-400 hover:text-emerald-400 border border-white/5 hover:border-emerald-500/20" title="Share on WhatsApp">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.821 7.454c-1.895 0-3.744-.509-5.35-1.47l-.384-.228-3.978 1.043 1.062-3.877-.25-.398a10.428 10.428 0 0 1-1.594-5.597c0-5.767 4.693-10.46 10.46-10.46 2.793 0 5.42 1.087 7.401 3.04a10.4 10.4 0 0 1 3.037 7.42c0 5.768-4.693 10.46-10.461 10.46m8.873-19.332A11.94 11.94 0 0 0 12.652 0C5.652 0 .012 5.666 0 12.67c0 2.23.593 4.407 1.71 6.347L0 24l5.12-1.343a11.9 11.9 0 0 0 5.617 1.417h.005c6.994 0 12.65-5.667 12.657-12.67a11.9 11.9 0 0 0-3.376-8.535z"/></svg>
+               </a>
+               <a href="https://instagram.com/#" target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 hover:bg-pink-500/20 rounded-xl transition-all text-slate-400 hover:text-pink-400 border border-white/5 hover:border-pink-500/20" title="Follow on Instagram">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+               </a>
+               <a href="https://facebook.com/#" target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 hover:bg-blue-600/20 rounded-xl transition-all text-slate-400 hover:text-blue-500 border border-white/5 hover:border-blue-600/20" title="Follow on Facebook">
+                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+               </a>
+               <button className="p-2.5 bg-white/5 hover:bg-indigo-500/20 rounded-xl transition-all text-slate-400 hover:text-indigo-400 border border-white/5 hover:border-indigo-500/20" title="Share App">
+                 <Share2 className="w-5 h-5" />
+               </button>
+            </div>
           </div>
         </div>
       </footer>
@@ -899,10 +959,7 @@ function AppContent() {
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  <div className="w-10 h-10 bg-indigo-600 dark:bg-indigo-500 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200 dark:shadow-none">
-                    <Mic className="w-5 h-5 text-white" />
-                  </div>
-                  <h1 className="font-bold text-xl tracking-tight dark:text-white">English Mastery</h1>
+                  <Logo className="flex transition-transform hover:scale-105" />
                 </div>
                 <button 
                   onClick={() => setIsMobileMenuOpen(false)} 
@@ -1012,69 +1069,6 @@ function AppContent() {
         onSubmit={handleFeedbackSubmit}
         sessionTitle={feedbackSession}
       />
-
-      {/* Footer */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 px-4 shrink-0">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <Mic className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="font-bold text-xl tracking-tighter dark:text-white">English Master</h1>
-            </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Your AI-powered companion for mastering English fluency through real-world scenarios.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-4">Learning</h4>
-            <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
-              <li>
-                <button 
-                  onClick={() => {
-                    setCurrentView('language-learning');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }} 
-                  className="hover:text-indigo-600 transition-colors flex items-center gap-2"
-                >
-                  <Brain className="w-4 h-4 text-indigo-500" /> AI Tutor (Up)
-                </button>
-              </li>
-              <li><button onClick={() => setCurrentView('journey')} className="hover:text-indigo-600 transition-colors">Curriculum</button></li>
-              <li><button onClick={() => setCurrentView('practice')} className="hover:text-indigo-600 transition-colors">Practice</button></li>
-              <li><button onClick={() => setCurrentView('shadowing')} className="hover:text-indigo-600 transition-colors">Shadowing Academy</button></li>
-              <li><button onClick={() => setCurrentView('leaderboard')} className="hover:text-indigo-600 transition-colors">Leaderboard</button></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-4">Tools</h4>
-            <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
-              <li><button onClick={() => setCurrentView('translate')} className="hover:text-indigo-600 transition-colors">Audio Translator</button></li>
-              <li><button onClick={() => setCurrentView('text-generator')} className="hover:text-indigo-600 transition-colors">AI Writer</button></li>
-              <li><button onClick={() => setCurrentView('nearby')} className="hover:text-indigo-600 transition-colors">Nearby Classes</button></li>
-              <li><button onClick={() => setCurrentView('vocabulary')} className="hover:text-indigo-600 transition-colors">Vocab Review</button></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white mb-4">Support</h4>
-            <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
-              <li><button onClick={() => setCurrentView('profile')} className="hover:text-indigo-600 transition-colors">Account Settings</button></li>
-              <li><button onClick={() => setCurrentView('privacy')} className="hover:text-indigo-600 transition-colors">Privacy Policy</button></li>
-              <li><button onClick={() => setCurrentView('terms')} className="hover:text-indigo-600 transition-colors">Terms of Service</button></li>
-              <li><button onClick={() => {}} className="hover:text-indigo-600 transition-colors">Contact Us</button></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto pt-8 mt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            © 2026 English Master AI. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-             <button className="text-slate-400 hover:text-indigo-600 transition-colors"><Share2 className="w-4 h-4" /></button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
