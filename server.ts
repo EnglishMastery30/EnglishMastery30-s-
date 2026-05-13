@@ -5,10 +5,33 @@ import path from "path";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 dotenv.config();
 
 let razorpayClient: Razorpay | null = null;
+let sesClient: SESClient | null = null;
+
+export function getSESClient(): SESClient {
+  if (!sesClient) {
+    const region = process.env.AWS_REGION || "us-east-1";
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+    
+    if (!accessKeyId || !secretAccessKey) {
+      console.warn("AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is missing. Email sending will fail.");
+    }
+    
+    sesClient = new SESClient({
+      region,
+      credentials: {
+        accessKeyId: accessKeyId || "dummy",
+        secretAccessKey: secretAccessKey || "dummy",
+      },
+    });
+  }
+  return sesClient;
+}
 
 export function getRazorpay(): Razorpay {
   if (!razorpayClient) {
@@ -150,6 +173,42 @@ async function startServer() {
       console.error("Razorpay error:", err);
       const errorMsg = err?.error?.description || err?.description || err?.message || JSON.stringify(err);
       res.status(500).json({ error: errorMsg });
+    }
+  });
+
+  app.post("/api/send-email", async (req, res) => {
+    try {
+      const { to, subject, htmlBody, textBody } = req.body;
+      const fromEmail = process.env.AWS_SES_FROM_EMAIL;
+
+      if (!fromEmail) {
+        return res.status(500).json({ error: "AWS_SES_FROM_EMAIL is not configured" });
+      }
+
+      if (!to || !subject || (!htmlBody && !textBody)) {
+        return res.status(400).json({ error: "Missing required fields: to, subject, htmlBody/textBody" });
+      }
+
+      const client = getSESClient();
+      const command = new SendEmailCommand({
+        Destination: {
+          ToAddresses: Array.isArray(to) ? to : [to],
+        },
+        Message: {
+          Body: {
+            ...(htmlBody && { Html: { Charset: "UTF-8", Data: htmlBody } }),
+            ...(textBody && { Text: { Charset: "UTF-8", Data: textBody } }),
+          },
+          Subject: { Charset: "UTF-8", Data: subject },
+        },
+        Source: fromEmail,
+      });
+
+      const response = await client.send(command);
+      res.json({ success: true, messageId: response.MessageId });
+    } catch (err: any) {
+      console.error("SES error:", err);
+      res.status(500).json({ error: err.message || "Failed to send email" });
     }
   });
 

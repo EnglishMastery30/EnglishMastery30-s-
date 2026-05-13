@@ -55,6 +55,7 @@ import { CulturalNormsPractice } from './components/CulturalNormsPractice';
 import { RolePlayScenarios } from './components/RolePlayScenarios';
 import { OnboardingFlow } from './components/OnboardingFlow';
 import { Leaderboard } from './components/Leaderboard';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 type ViewState = 'landing' | 'login' | 'dashboard' | 'daily-talk' | 'journey' | 'language-learning' | 'reports' | 'profile' | 'section' | 'calls' | 'privacy' | 'terms' | 'nearby' | 'translate' | 'upgrade' | 'vocabulary' | 'grammar-drill' | 'subscription-management' | 'api-keys' | 'my-files' | 'practice' | 'tutors' | 'text-generator' | 'roleplay' | 'culture' | 'vocab-builder' | 'tasks' | 'shadowing' | 'leaderboard' | 'about' | 'contact' | 'marketing' | 'support' | 'stories';
 
@@ -1077,6 +1078,7 @@ export default function App() {
   return (
     <HashRouter>
       <AppContent />
+      <OfflineIndicator />
     </HashRouter>
   );
 }

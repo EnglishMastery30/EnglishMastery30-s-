@@ -1,6 +1,6 @@
 {
-  "name": "RRR (Read. Repeat. Respond.)",
-  "description": "AI-powered spoken English app to help you speak with confidence through daily practice, voice conversations, and real-time peer calls.",
+  "name": "English Master",
+  "description": "AI-powered spoken English app to help you speak with confidence through daily practice, voice conversations, and real-time peer calls using the RRR methodology.",
   "requestFramePermissions": [
     "microphone",
     "camera",

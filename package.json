@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1044.0",
     "@google/genai": "^1.29.0",
     "@stripe/stripe-js": "^8.11.0",
     "@supabase/supabase-js": "^2.103.0",
